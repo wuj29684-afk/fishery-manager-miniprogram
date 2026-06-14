@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.swc/
+.env
+.env.local
+*.tsbuildinfo
+.DS_Store
+*.key
+*.jks
+*.keystore

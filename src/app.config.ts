@@ -4,7 +4,8 @@ export default defineAppConfig({
     "pages/pond-detail/index",
     "pages/pond-form/index",
     "pages/record-form/index",
-    "pages/data-backup/index"
+    "pages/data-backup/index",
+    "pages/about-data/index"
   ],
   window: {
     backgroundTextStyle: "light",

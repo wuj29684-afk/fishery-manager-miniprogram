@@ -74,6 +74,9 @@ export default function IndexPage() {
           <Text className="backup-button" onClick={() => Taro.navigateTo({ url: "/pages/data-backup/index" })}>
             数据备份
           </Text>
+          <Text className="about-button" onClick={() => Taro.navigateTo({ url: "/pages/about-data/index" })}>
+            关于与数据
+          </Text>
         </View>
       </View>
 

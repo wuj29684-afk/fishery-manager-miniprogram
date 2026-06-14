@@ -5,7 +5,8 @@
   "scripts": {
     "dev:weapp": "taro build --type weapp --watch",
     "build:weapp": "taro build --type weapp",
-    "check:domain": "node scripts/check-domain.mjs"
+    "check:domain": "node scripts/check-domain.mjs",
+    "check:about-data": "node scripts/check-about-data.mjs"
   },
   "dependencies": {
     "@tarojs/components": "4.2.0",
