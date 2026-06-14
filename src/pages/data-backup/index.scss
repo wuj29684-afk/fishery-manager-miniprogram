@@ -1,0 +1,143 @@
+.backup-page {
+  min-height: 100vh;
+  padding: 40px 28px 64px;
+  background: #f7faf4;
+}
+
+.backup-head {
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  display: block;
+  color: #3b7b4a;
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.title {
+  display: block;
+  color: #0f4d1f;
+  font-size: 48px;
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+
+.subtitle,
+.hint,
+.loading {
+  display: block;
+  color: #66736b;
+  font-size: 26px;
+  line-height: 1.45;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 34px;
+}
+
+.summary-cell {
+  padding: 24px;
+  border: 1px solid #dce8dc;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.summary-label {
+  display: block;
+  color: #768178;
+  font-size: 24px;
+  margin-bottom: 14px;
+}
+
+.summary-value {
+  display: block;
+  color: #1d5c2d;
+  font-size: 36px;
+  font-weight: 900;
+}
+
+.action-section,
+.restore-section,
+.preview-section {
+  margin-bottom: 34px;
+}
+
+.section-title {
+  display: block;
+  color: #16251b;
+  font-size: 34px;
+  font-weight: 900;
+  margin-bottom: 18px;
+}
+
+.copy-button {
+  display: block;
+  margin-bottom: 16px;
+  padding: 22px;
+  border: 1px solid #b8cfbb;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #0f4d1f;
+  font-size: 28px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.copy-button.primary {
+  border-color: #0f4d1f;
+  background: #0f4d1f;
+  color: #ffffff;
+}
+
+.preview {
+  min-height: 280px;
+  width: auto;
+  padding: 20px;
+  border: 1px solid #dce8dc;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #16251b;
+  font-size: 24px;
+  line-height: 1.45;
+}
+
+.restore-input {
+  min-height: 220px;
+  width: auto;
+  padding: 20px;
+  border: 1px solid #dce8dc;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #16251b;
+  font-size: 24px;
+  line-height: 1.45;
+}
+
+.danger-copy {
+  display: block;
+  margin: 14px 0;
+  color: #9a4d00;
+  font-size: 24px;
+  line-height: 1.45;
+}
+
+.restore-button {
+  display: block;
+  padding: 22px;
+  border: 1px solid #e5b8af;
+  border-radius: 14px;
+  background: #fff7f5;
+  color: #c43d2b;
+  font-size: 28px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.hint {
+  margin-top: 14px;
+}

@@ -1,0 +1,122 @@
+.form-page {
+  min-height: 100vh;
+  padding: 40px 28px 64px;
+  background: #f7faf4;
+}
+
+.form-head {
+  margin-bottom: 24px;
+}
+
+.title {
+  display: block;
+  color: #0f4d1f;
+  font-size: 44px;
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+
+.subtitle,
+.hint {
+  display: block;
+  color: #66736b;
+  font-size: 24px;
+  line-height: 1.45;
+}
+
+.record-type-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.type-tab {
+  display: block;
+  padding: 18px 8px;
+  border: 1px solid #cfe0d1;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #516052;
+  font-size: 24px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.type-tab.active {
+  border-color: #0f4d1f;
+  background: #0f4d1f;
+  color: #ffffff;
+}
+
+.pond-picker,
+.field {
+  padding: 24px;
+  margin-bottom: 18px;
+  border: 1px solid #dce8dc;
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.field-row {
+  display: flex;
+  gap: 18px;
+}
+
+.compact {
+  flex: 1;
+  min-width: 0;
+}
+
+.label {
+  display: block;
+  color: #516052;
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.picker-value {
+  display: block;
+  color: #16251b;
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.input {
+  min-height: 56px;
+  color: #16251b;
+  font-size: 30px;
+}
+
+.textarea {
+  min-height: 160px;
+  color: #16251b;
+  font-size: 28px;
+  line-height: 1.5;
+}
+
+.save-button {
+  display: block;
+  margin-top: 28px;
+  padding: 24px;
+  border-radius: 16px;
+  background: #0f4d1f;
+  color: #ffffff;
+  font-size: 30px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.delete-button {
+  display: block;
+  margin-top: 18px;
+  padding: 22px;
+  border: 1px solid #e5b8af;
+  border-radius: 16px;
+  background: #fff7f5;
+  color: #c43d2b;
+  font-size: 28px;
+  font-weight: 900;
+  text-align: center;
+}
