@@ -1,16 +1,16 @@
 # STATUS - fishery-manager-miniprogram
 
-> 最后更新：2026-06-14
+> 最后更新：2026-06-15
 > 仓库：`https://github.com/wuj29684-afk/fishery-manager-miniprogram`
 > 来源：`fishery-manager/miniprogram/`
 
 ## 当前状态
 
 - 当前分支：`main`
-- 当前提交：`cd3546a feat: add miniprogram source`
+- 当前提交：`bef9b5a feat: add about data page`
 - 小程序 AppID：`wxa516d96010f19988`
-- 体验版版本号：`0.1.0-mvp`
-- 体验版：已上传并通过用户真机验证
+- 体验版版本号：`0.1.1reviewprep`
+- 体验版：已上传；上一版已通过用户真机验证，最新 `0.1.1reviewprep` 待用户复核
 - 正式审核/正式发布：未提交、未发布
 - 技术栈：Taro + React + TypeScript
 
@@ -61,6 +61,7 @@ NODE_ENV=production npm run build:weapp
 - Taro production weapp build
 - 微信开发者工具编译、预览
 - 用户真机扫码体验版验证
+- 2026-06-15：微信开发者工具上传成功，开发/体验版版本号为 `0.1.1reviewprep`（原计划 `0.1.1-review-prep`，开发者工具版本号字段会过滤连字符）；仍未提交正式审核，仍未正式发布
 
 ## Git 安全边界
 
