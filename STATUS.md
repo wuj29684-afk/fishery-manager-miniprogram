@@ -10,7 +10,7 @@
 - 当前提交：`bef9b5a feat: add about data page`
 - 小程序 AppID：`wxa516d96010f19988`
 - 体验版版本号：`0.1.1reviewprep`
-- 体验版：已上传；上一版已通过用户真机验证，最新 `0.1.1reviewprep` 待用户复核
+- 体验版：已上传，最新 `0.1.1reviewprep` 已通过用户真机验证
 - 正式审核/正式发布：未提交、未发布
 - 技术栈：Taro + React + TypeScript
 
@@ -62,6 +62,7 @@ NODE_ENV=production npm run build:weapp
 - 微信开发者工具编译、预览
 - 用户真机扫码体验版验证
 - 2026-06-15：微信开发者工具上传成功，开发/体验版版本号为 `0.1.1reviewprep`（原计划 `0.1.1-review-prep`，开发者工具版本号字段会过滤连字符）；仍未提交正式审核，仍未正式发布
+- 2026-06-15：用户已扫码体验最新 `0.1.1reviewprep` 体验版并确认没问题
 
 ## Git 安全边界
 
