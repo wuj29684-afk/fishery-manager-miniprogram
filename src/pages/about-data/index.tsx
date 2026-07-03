@@ -10,8 +10,8 @@ const summaryCards = [
   },
   {
     label: "版本状态",
-    value: "0.1.0-mvp",
-    detail: "体验版已完成真机验证，未提交正式审核。"
+    value: "0.1.2 体验版",
+    detail: "已完成备案和真机验证，仍未正式发布。"
   },
   {
     label: "能力范围",
@@ -43,7 +43,7 @@ const boundaryItems = [
 const reviewPath = ["首页", "新增塘口", "快速记录", "塘口详情", "数据备份", "关于与数据"];
 
 const roadmapItems = [
-  "后续会先补齐隐私政策、用户协议、服务类目和审核截图素材。",
+  "发布前继续复核隐私政策、用户协议、服务类目和审核截图素材。",
   "登录、云端同步、异常提醒和数据模型升级会在正式确认后分阶段推进。",
   "正式接入服务端时，AppSecret 仍只放在服务端，不进入小程序代码、配置或日志。"
 ];
@@ -104,7 +104,7 @@ export default function AboutDataPage() {
 
       <InfoSection title="体验版说明">
         <Text className="section-copy">
-          当前版本用于体验和验证流程，已上传体验版并通过真机验证，仍未提交正式审核，未正式发布。
+          当前版本用于体验和发布前复核，已完成备案、上传体验版并通过真机验证，仍未正式发布。
         </Text>
       </InfoSection>
 

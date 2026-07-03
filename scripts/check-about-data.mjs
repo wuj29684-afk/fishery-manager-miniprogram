@@ -41,7 +41,8 @@ assertIncludes(homePage, "关于与数据", "home page");
   "当前版本不上传服务器，不接入真实网络请求",
   "当前体验版暂无在线客服",
   "AppSecret 只能放在服务端",
-  "0.1.0-mvp"
+  "0.1.2 体验版",
+  "已完成备案"
 ].forEach((copy) => assertIncludes(aboutPage, copy, "about-data page"));
 
 [
