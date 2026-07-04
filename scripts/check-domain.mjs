@@ -195,6 +195,17 @@ try {
   assert.equal(weeklyReport.waterRecordCount, 1, "weekly report should count water records");
   assert.equal(weeklyReport.harvestWeightKg, 0, "weekly report should default harvest weight to zero");
   assert.equal(weeklyReport.alertCount, 2, "weekly report should include current alert count");
+
+  const localOwnerState = {
+    ...healthState,
+    owner: {
+      mode: "local",
+      localOwnerId: "local-device-1",
+      boundUserId: ""
+    }
+  };
+  assert.equal(localOwnerState.owner.mode, "local");
+  assert.equal(parseJsonBackup(backupPayload(healthState)).valid, true, "existing backups remain compatible");
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
 }

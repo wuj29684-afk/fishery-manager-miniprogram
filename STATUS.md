@@ -77,6 +77,14 @@ NODE_ENV=production npm run build:weapp
 - 2026-07-04：用户确认备案通过后的最终小程序名称为 `渔儿小助手`；已将小程序导航标题、首页标题、关于页产品名和发布前复核清单同步为最终名称。
 - 2026-07-04：改名同步版已通过微信开发者工具上传为开发版本 `0.1.3`，上传备注 `sync-name: 渔儿小助手`；本次按用户确认覆盖体验版，随后用户确认已提交微信代码审核，当前等待审核结果，仍未正式发布。
 
+## 2026-07-04 User Asset Isolation Gate
+
+- Future account login and cloud sync work must isolate ponds, records, reports, backups, and sync revisions by authenticated user.
+- Added mini program account-sync client skeletons for the next 0.2 phase, but they are not wired into the current UI and do not change the local-only 0.1.3 behavior.
+- The current 0.1.3 mini program remains local-only and does not add login, network requests, upload, location, payment, AppSecret, or formal release.
+- Verified with `npm run check:domain`, `npm run check:about-data`, `npx tsc --noEmit`, and `NODE_ENV=production npm run build:weapp`.
+- Secret scan found only boundary-text references; no real AppSecret, token, env file, or key material was added.
+
 ## Git 安全边界
 
 不要提交以下内容：
