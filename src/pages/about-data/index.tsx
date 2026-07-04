@@ -78,7 +78,7 @@ export default function AboutDataPage() {
 
       <InfoSection title="产品定位">
         <Text className="section-copy">
-          渔业养殖智能管家当前定位为一线塘口经营值班台，帮助现场快速记录、查看塘口状态和复盘经营数据。
+          渔儿小助手当前定位为一线塘口经营值班台，帮助现场快速记录、查看塘口状态和复盘经营数据。
         </Text>
       </InfoSection>
 

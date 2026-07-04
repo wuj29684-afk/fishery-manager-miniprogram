@@ -31,12 +31,16 @@ if (!reviewChecklistPath) {
 
 const aboutPage = fs.readFileSync(aboutPagePath, "utf8");
 const reviewChecklist = fs.readFileSync(reviewChecklistPath, "utf8");
+const officialMiniProgramName = "渔儿小助手";
 
 assertIncludes(appConfig, "pages/about-data/index", "app config");
+assertIncludes(appConfig, officialMiniProgramName, "app config");
 assertIncludes(homePage, "/pages/about-data/index", "home page");
 assertIncludes(homePage, "关于与数据", "home page");
+assertIncludes(homePage, officialMiniProgramName, "home page");
 
 [
+  officialMiniProgramName,
   "当前数据仅保存在本机微信小程序本地存储",
   "当前版本不上传服务器，不接入真实网络请求",
   "当前体验版暂无在线客服",
@@ -54,5 +58,7 @@ assertIncludes(homePage, "关于与数据", "home page");
   "截图素材",
   "版本备注"
 ].forEach((item) => assertIncludes(reviewChecklist, item, "review checklist"));
+
+assertIncludes(reviewChecklist, officialMiniProgramName, "review checklist");
 
 console.log("about/data smoke checks passed");

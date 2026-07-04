@@ -144,7 +144,7 @@ export default function IndexPage() {
         <View className="hero-top">
           <View>
             <Text className="eyebrow">清晨值守 · 本地经营驾驶舱</Text>
-            <Text className="title">渔业养殖智能管家</Text>
+            <Text className="title">渔儿小助手</Text>
           </View>
           <View className="hero-tools">
             <Text className="tool-pill" onClick={() => Taro.navigateTo({ url: "/pages/about-data/index" })}>

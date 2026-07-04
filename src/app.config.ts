@@ -10,7 +10,7 @@ export default defineAppConfig({
   window: {
     backgroundTextStyle: "light",
     navigationBarBackgroundColor: "#0f4d1f",
-    navigationBarTitleText: "渔业养殖智能管家",
+    navigationBarTitleText: "渔儿小助手",
     navigationBarTextStyle: "white",
     backgroundColor: "#f7faf4"
   }
