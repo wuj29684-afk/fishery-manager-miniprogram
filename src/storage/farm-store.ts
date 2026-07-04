@@ -1,5 +1,6 @@
 import Taro from "@tarojs/taro";
 import { seedFarmState } from "../data/seed";
+import { createId } from "../domain/id";
 import type { FarmRecord, FarmRecordInput, FarmState, Pond } from "../types";
 
 const STORAGE_KEY = "fishery-manager:farm-state:v1";
@@ -42,7 +43,7 @@ export async function addPond(input: Omit<Pond, "id" | "status" | "createdAt" | 
   const now = new Date().toISOString();
   const pond: Pond = {
     ...input,
-    id: `pond-${Date.now()}`,
+    id: createId("pond"),
     status: "active",
     createdAt: now,
     updatedAt: now
@@ -94,7 +95,7 @@ export async function addRecord(input: FarmRecordInput): Promise<FarmState> {
   const state = await loadFarmState();
   const record = {
     ...input,
-    id: `record-${input.type}-${Date.now()}`,
+    id: createId(`record-${input.type}`),
     createdAt: new Date().toISOString()
   } as FarmRecord;
   const next = { ...state, records: [record, ...state.records] };

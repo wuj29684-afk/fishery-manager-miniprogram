@@ -1,4 +1,5 @@
 import type { FarmRecord, FarmState, Pond } from "../types";
+import { validateFarmState } from "./state-validation";
 
 export interface BackupPayload {
   exportedAt: string;
@@ -64,11 +65,6 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function hasValidStateShape(value: unknown): value is FarmState {
-  if (!isObject(value)) return false;
-  return value.version === 1 && Array.isArray(value.ponds) && Array.isArray(value.records);
-}
-
 export function parseJsonBackup(text: string): ImportResult {
   if (!text.trim()) {
     return { valid: false, message: "请先粘贴 JSON 备份内容" };
@@ -89,9 +85,10 @@ export function parseJsonBackup(text: string): ImportResult {
     return { valid: false, message: "不是当前小程序导出的备份" };
   }
 
-  if (!hasValidStateShape(parsed.state)) {
-    return { valid: false, message: "备份缺少塘口或记录数据" };
+  const validation = validateFarmState(parsed.state);
+  if (!validation.valid || !validation.state) {
+    return { valid: false, message: validation.message };
   }
 
-  return { valid: true, message: "", state: parsed.state };
+  return { valid: true, message: "", state: validation.state };
 }

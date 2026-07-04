@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Taro from "@tarojs/taro";
 import { Input, Picker, Text, Textarea, View } from "@tarojs/components";
 import { todayString } from "../../domain/format";
-import { labelForRecordType, validatePositiveNumber } from "../../domain/validation";
+import { labelForRecordType, parseRequiredNumber } from "../../domain/validation";
 import { addRecord, deleteRecord, loadFarmState, updateRecord } from "../../storage/farm-store";
 import type { FarmRecord, FarmRecordInput, Pond, RecordType } from "../../types";
 import "./index.scss";
@@ -104,10 +104,8 @@ export default function RecordFormPage() {
     }
 
     if (type === "feed" || type === "harvest") {
-      const weight = Number(weightKg);
-      const price = Number(unitPriceYuan);
-      const weightResult = validatePositiveNumber(weight, "重量");
-      const priceResult = validatePositiveNumber(price, "单价");
+      const weightResult = parseRequiredNumber(weightKg, "重量");
+      const priceResult = parseRequiredNumber(unitPriceYuan, "单价");
       if (!weightResult.valid || !priceResult.valid) {
         showMessage(!weightResult.valid ? weightResult.message : priceResult.message);
         return null;
@@ -117,18 +115,15 @@ export default function RecordFormPage() {
         type,
         date,
         note,
-        weightKg: weight,
-        unitPriceYuan: price
+        weightKg: weightResult.value,
+        unitPriceYuan: priceResult.value
       };
     }
 
     if (type === "water") {
-      const phValue = Number(ph);
-      const oxygenValue = Number(dissolvedOxygen);
-      const ammoniaValue = Number(ammoniaNitrogen);
-      const phResult = validatePositiveNumber(phValue, "pH");
-      const oxygenResult = validatePositiveNumber(oxygenValue, "溶氧");
-      const ammoniaResult = validatePositiveNumber(ammoniaValue, "氨氮");
+      const phResult = parseRequiredNumber(ph, "pH", 0, 14);
+      const oxygenResult = parseRequiredNumber(dissolvedOxygen, "溶氧");
+      const ammoniaResult = parseRequiredNumber(ammoniaNitrogen, "氨氮");
       const failed = [phResult, oxygenResult, ammoniaResult].find((item) => !item.valid);
       if (failed) {
         showMessage(failed.message);
@@ -139,14 +134,13 @@ export default function RecordFormPage() {
         type: "water",
         date,
         note,
-        ph: phValue,
-        dissolvedOxygen: oxygenValue,
-        ammoniaNitrogen: ammoniaValue
+        ph: phResult.value,
+        dissolvedOxygen: oxygenResult.value,
+        ammoniaNitrogen: ammoniaResult.value
       };
     }
 
-    const withdrawal = Number(withdrawalDays);
-    const withdrawalResult = validatePositiveNumber(withdrawal, "休药期");
+    const withdrawalResult = parseRequiredNumber(withdrawalDays, "休药期");
     if (!drugName.trim()) {
       showMessage("请填写药品名称");
       return null;
@@ -166,7 +160,7 @@ export default function RecordFormPage() {
       note,
       drugName,
       dosage,
-      withdrawalDays: withdrawal
+      withdrawalDays: withdrawalResult.value
     };
   }
 
@@ -213,7 +207,10 @@ export default function RecordFormPage() {
   return (
     <View className="form-page">
       <View className="form-head">
-        <Text className="title">{isEditing ? "编辑" : "新增"}{labelForRecordType(type)}记录</Text>
+        <Text className="title">
+          {isEditing ? "编辑" : "新增"}
+          {labelForRecordType(type)}记录
+        </Text>
         <Text className="subtitle">数据只保存在本机微信小程序本地存储中。</Text>
       </View>
 
