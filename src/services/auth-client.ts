@@ -3,6 +3,7 @@ import Taro from "@tarojs/taro";
 export interface LoginSession {
   userId: string;
   sessionToken: string;
+  expiresAt: string;
 }
 
 export async function requestWechatLoginCode(): Promise<string> {
@@ -21,7 +22,7 @@ export async function loginWithServer(apiBaseUrl: string): Promise<LoginSession>
     data: { code }
   });
 
-  if (!response.data?.sessionToken || !response.data.userId) {
+  if (!response.data?.sessionToken || !response.data.userId || !response.data.expiresAt) {
     throw new Error("登录服务返回异常");
   }
 

@@ -55,6 +55,7 @@ function compileDomainModules() {
       "src/domain/pond-health.ts",
       "src/domain/state-validation.ts",
       "src/domain/sync-payload.ts",
+      "src/domain/sync-state.ts",
       "src/domain/validation.ts",
       "src/domain/weekly-report.ts"
     ],
@@ -104,6 +105,7 @@ try {
   const { createId } = require(join(outDir, "domain", "id.js"));
   const { evaluatePondHealth } = require(join(outDir, "domain", "pond-health.js"));
   const { createSyncPushPayload } = require(join(outDir, "domain", "sync-payload.js"));
+  const { createLocalStateFromPullResult } = require(join(outDir, "domain", "sync-state.js"));
   const { parseRequiredNumber, validateNumberRange } = require(join(outDir, "domain", "validation.js"));
   const { buildWeeklyReport } = require(join(outDir, "domain", "weekly-report.js"));
 
@@ -222,6 +224,15 @@ try {
   assert.equal(syncPayload.lastSyncedAt, "2026-07-04T00:00:00.000Z");
   assert.equal("ownerUserId" in syncPayload.ponds[0], false, "mini program sync payload must not trust pond ownerUserId");
   assert.equal("ownerUserId" in syncPayload.records[0], false, "mini program sync payload must not trust record ownerUserId");
+
+  const pulledState = createLocalStateFromPullResult({
+    serverRevision: 2,
+    ponds: [{ ...validPond, ownerUserId: "usr_server" }],
+    records: [{ ...validWaterRecord, ownerUserId: "usr_server" }]
+  });
+  assert.equal(pulledState.version, 1, "pulled cloud data should remain compatible with local FarmState v1");
+  assert.equal("ownerUserId" in pulledState.ponds[0], false, "local state must not persist server pond ownerUserId");
+  assert.equal("ownerUserId" in pulledState.records[0], false, "local state must not persist server record ownerUserId");
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
 }

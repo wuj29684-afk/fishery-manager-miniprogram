@@ -30,6 +30,8 @@ if (!reviewChecklistPath) {
 }
 
 const aboutPage = fs.readFileSync(aboutPagePath, "utf8");
+const dataBackupPage = readText("src/pages/data-backup/index.tsx");
+const apiConfig = readText("src/config/api.ts");
 const reviewChecklist = fs.readFileSync(reviewChecklistPath, "utf8");
 const officialMiniProgramName = "渔儿小助手";
 
@@ -60,5 +62,16 @@ assertIncludes(homePage, officialMiniProgramName, "home page");
 ].forEach((item) => assertIncludes(reviewChecklist, item, "review checklist"));
 
 assertIncludes(reviewChecklist, officialMiniProgramName, "review checklist");
+
+[
+  "账号同步",
+  "绑定本机数据到账号",
+  "使用账号数据",
+  "暂未配置云同步服务",
+  "createLocalStateFromPullResult"
+].forEach((copy) => assertIncludes(dataBackupPage, copy, "data backup page"));
+
+assertIncludes(apiConfig, "TARO_APP_API_BASE_URL", "api config");
+assertIncludes(apiConfig, "https://", "api config");
 
 console.log("about/data smoke checks passed");

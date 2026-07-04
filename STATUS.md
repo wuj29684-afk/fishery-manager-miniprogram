@@ -92,6 +92,16 @@ NODE_ENV=production npm run build:weapp
 - Domain checks prove push payloads strip any local `ownerUserId`; the server remains the source of truth for ownership.
 - Verified with `npm run check:domain`, `npm run check:about-data`, `npx tsc --noEmit`, and `NODE_ENV=production npm run build:weapp`.
 
+## 2026-07-04 Cloud Sync 0.2 Upload Readiness Work
+
+- Added account sync controls on the data backup page: bind local data to account, pull account data, API URL gating, and second confirmation before local overwrite.
+- Package version is now `0.2.0`.
+- Upload still must wait for API deployment, WeChat request valid domain configuration, real-device verification, and explicit user confirmation.
+- When `TARO_APP_API_BASE_URL` is not configured as an HTTPS URL, the sync entry stays in an unavailable state and does not send requests.
+- Pulling account data into local storage strips server `ownerUserId` fields and keeps the local `FarmState` format at version 1.
+- Final local verification for this 0.2 readiness pass: `npm run check:domain`, `npm run check:about-data`, `npx tsc --noEmit`, and production `npm run build:weapp`.
+- Safety scan found only boundary documentation and environment variable names; no real AppSecret, token, `.env`, key, JKS, or keystore material was added.
+
 ## Git 安全边界
 
 不要提交以下内容：
