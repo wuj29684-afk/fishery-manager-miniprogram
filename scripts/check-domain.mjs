@@ -52,8 +52,10 @@ function compileDomainModules() {
       "src/types/index.ts",
       "src/domain/export.ts",
       "src/domain/id.ts",
+      "src/domain/pond-health.ts",
       "src/domain/state-validation.ts",
-      "src/domain/validation.ts"
+      "src/domain/validation.ts",
+      "src/domain/weekly-report.ts"
     ],
     { cwd: projectRoot, stdio: "inherit" }
   );
@@ -99,7 +101,9 @@ try {
   const require = createRequire(import.meta.url);
   const { parseJsonBackup } = require(join(outDir, "domain", "export.js"));
   const { createId } = require(join(outDir, "domain", "id.js"));
+  const { evaluatePondHealth } = require(join(outDir, "domain", "pond-health.js"));
   const { parseRequiredNumber, validateNumberRange } = require(join(outDir, "domain", "validation.js"));
+  const { buildWeeklyReport } = require(join(outDir, "domain", "weekly-report.js"));
 
   const ids = Array.from({ length: 50 }, () => createId("pond"));
   assert.equal(new Set(ids).size, ids.length, "createId should avoid collisions during burst creation");
@@ -137,6 +141,60 @@ try {
     false,
     "backup import should reject invalid record dates"
   );
+
+  const healthState = {
+    version: 1,
+    ponds: [
+      {
+        id: "pond-health-1",
+        name: "Pond A",
+        species: "Tilapia",
+        location: "Zhanjiang",
+        areaMu: 8.5,
+        day: 42,
+        status: "active",
+        createdAt: "2026-07-01T00:00:00.000Z",
+        updatedAt: "2026-07-01T00:00:00.000Z"
+      }
+    ],
+    records: [
+      {
+        id: "record-water-low-oxygen",
+        pondId: "pond-health-1",
+        type: "water",
+        date: "2026-07-04",
+        ph: 7.2,
+        dissolvedOxygen: 2.8,
+        ammoniaNitrogen: 0.1,
+        note: "",
+        createdAt: "2026-07-04T08:00:00.000Z"
+      },
+      {
+        id: "record-feed-old",
+        pondId: "pond-health-1",
+        type: "feed",
+        date: "2026-07-01",
+        weightKg: 12,
+        unitPriceYuan: 8,
+        note: "",
+        createdAt: "2026-07-01T08:00:00.000Z"
+      }
+    ]
+  };
+
+  const health = evaluatePondHealth(healthState, "pond-health-1", "2026-07-04");
+  assert.deepEqual(
+    health.alerts.map((alert) => alert.code),
+    ["LOW_OXYGEN", "MISSING_FEED_RECORD"],
+    "pond health should flag low dissolved oxygen and missing recent feed records"
+  );
+  assert.equal(health.alerts[0].severity, "high");
+
+  const weeklyReport = buildWeeklyReport(healthState, "pond-health-1", "2026-07-04");
+  assert.equal(weeklyReport.feedWeightKg, 12, "weekly report should sum feed weight");
+  assert.equal(weeklyReport.waterRecordCount, 1, "weekly report should count water records");
+  assert.equal(weeklyReport.harvestWeightKg, 0, "weekly report should default harvest weight to zero");
+  assert.equal(weeklyReport.alertCount, 2, "weekly report should include current alert count");
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
 }

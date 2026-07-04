@@ -8,6 +8,8 @@ import pondWestImage from "../../assets/pond-west-thumb.jpg";
 import { shortcuts } from "../../data/seed";
 import { formatArea, formatMoney, todayString } from "../../domain/format";
 import { getDashboardMetrics, getPondSummaries, getRecentRecords, getRecordTitle } from "../../domain/operations";
+import { evaluatePondHealth } from "../../domain/pond-health";
+import { buildWeeklyReport } from "../../domain/weekly-report";
 import { loadFarmState } from "../../storage/farm-store";
 import type { FarmRecord, FarmState, PondDashboardSummary, RecordType } from "../../types";
 import "./index.scss";
@@ -72,6 +74,17 @@ function getTaskPlan(summaries: PondDashboardSummary[], todayRecords: number) {
   ];
 }
 
+function alertLabel(code: string): string {
+  const labels: Record<string, string> = {
+    LOW_OXYGEN: "溶氧偏低",
+    PH_OUT_OF_RANGE: "pH 异常",
+    HIGH_AMMONIA: "氨氮偏高",
+    MISSING_FEED_RECORD: "补记投料",
+    MISSING_WATER_RECORD: "补测水质"
+  };
+  return labels[code] ?? code;
+}
+
 export default function IndexPage() {
   const [state, setState] = useState<FarmState | null>(null);
   const [pondQuery, setPondQuery] = useState("");
@@ -98,6 +111,9 @@ export default function IndexPage() {
     const todayRecords = state.records.filter((item) => item.date === today).length;
     const warningCount = pondSummaries.filter((summary) => !isCalmAlert(summary.alert)).length;
     const recentRecords = getRecentRecords(state);
+    const focusedPond = pondSummaries.find((summary) => summary.pond.status !== "inactive")?.pond ?? pondSummaries[0]?.pond;
+    const focusedHealth = focusedPond ? evaluatePondHealth(state, focusedPond.id, today) : { alerts: [] };
+    const focusedReport = focusedPond ? buildWeeklyReport(state, focusedPond.id, today) : null;
     const normalizedPondQuery = pondQuery.trim().toLowerCase();
     const visiblePondSummaries = pondSummaries.filter((summary) => {
       const statusMatched =
@@ -120,6 +136,9 @@ export default function IndexPage() {
       recentRecords,
       todayRecords,
       warningCount,
+      focusedPond,
+      focusedHealth,
+      focusedReport,
       tasks: getTaskPlan(pondSummaries, todayRecords)
     };
   }, [pondQuery, pondStatusFilter, state, today]);
@@ -228,6 +247,46 @@ export default function IndexPage() {
           ))}
         </View>
       </View>
+
+      {viewModel.focusedPond && viewModel.focusedReport && (
+        <View className="section operating-loop">
+          <View className="section-head">
+            <View>
+              <Text className="section-title">本周经营提醒</Text>
+              <Text className="loop-subtitle">{viewModel.focusedPond.name}</Text>
+            </View>
+            <Text className="section-link">
+              {viewModel.focusedReport.startDate} 至 {viewModel.focusedReport.endDate}
+            </Text>
+          </View>
+          <View className="loop-grid">
+            <View className="loop-item">
+              <Text className="loop-value">{viewModel.focusedReport.feedWeightKg.toFixed(1)}kg</Text>
+              <Text className="loop-label">本周投料</Text>
+            </View>
+            <View className="loop-item">
+              <Text className="loop-value">{viewModel.focusedReport.waterRecordCount}</Text>
+              <Text className="loop-label">水质记录</Text>
+            </View>
+            <View className="loop-item">
+              <Text className="loop-value">{viewModel.focusedHealth.alerts.length}</Text>
+              <Text className="loop-label">待关注提醒</Text>
+            </View>
+          </View>
+          {viewModel.focusedHealth.alerts.length > 0 ? (
+            <View className="loop-alert-list">
+              {viewModel.focusedHealth.alerts.slice(0, 2).map((alert) => (
+                <View className={`loop-alert loop-alert-${alert.severity}`} key={alert.code}>
+                  <Text className="loop-alert-title">{alertLabel(alert.code)}</Text>
+                  <Text className="loop-alert-message">{alert.message}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text className="loop-calm">本周记录状态平稳，继续保持巡塘和水质复测。</Text>
+          )}
+        </View>
+      )}
 
       <View className="section">
         <View className="section-head">

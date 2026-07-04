@@ -52,6 +52,13 @@ npx tsc --noEmit
 NODE_ENV=production npm run build:weapp
 ```
 
+## 2026-07-04 Local Operating Loop
+
+- Synced local-only pond health rules and weekly report rules from the main mini program source.
+- Added a dashboard operating-loop card showing weekly feed, water record count, and current local reminders for the focused pond.
+- This change keeps the current boundary: no login, no payment, no real network requests, no upload, no location, no AppSecret, and no formal release.
+- Verified with `npm run check:domain`, `npm run check:about-data`, `npx tsc --noEmit`, and `NODE_ENV=production npm run build:weapp`.
+
 此前已通过：
 
 - domain smoke checks
