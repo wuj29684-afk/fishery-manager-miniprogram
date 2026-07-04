@@ -54,6 +54,7 @@ function compileDomainModules() {
       "src/domain/id.ts",
       "src/domain/pond-health.ts",
       "src/domain/state-validation.ts",
+      "src/domain/sync-payload.ts",
       "src/domain/validation.ts",
       "src/domain/weekly-report.ts"
     ],
@@ -102,6 +103,7 @@ try {
   const { parseJsonBackup } = require(join(outDir, "domain", "export.js"));
   const { createId } = require(join(outDir, "domain", "id.js"));
   const { evaluatePondHealth } = require(join(outDir, "domain", "pond-health.js"));
+  const { createSyncPushPayload } = require(join(outDir, "domain", "sync-payload.js"));
   const { parseRequiredNumber, validateNumberRange } = require(join(outDir, "domain", "validation.js"));
   const { buildWeeklyReport } = require(join(outDir, "domain", "weekly-report.js"));
 
@@ -206,6 +208,20 @@ try {
   };
   assert.equal(localOwnerState.owner.mode, "local");
   assert.equal(parseJsonBackup(backupPayload(healthState)).valid, true, "existing backups remain compatible");
+
+  const syncPayload = createSyncPushPayload(
+    {
+      version: 1,
+      ponds: [{ ...validPond, ownerUserId: "usr_other" }],
+      records: [{ ...validWaterRecord, ownerUserId: "usr_other" }]
+    },
+    "device-1",
+    "2026-07-04T00:00:00.000Z"
+  );
+  assert.equal(syncPayload.deviceId, "device-1");
+  assert.equal(syncPayload.lastSyncedAt, "2026-07-04T00:00:00.000Z");
+  assert.equal("ownerUserId" in syncPayload.ponds[0], false, "mini program sync payload must not trust pond ownerUserId");
+  assert.equal("ownerUserId" in syncPayload.records[0], false, "mini program sync payload must not trust record ownerUserId");
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
 }

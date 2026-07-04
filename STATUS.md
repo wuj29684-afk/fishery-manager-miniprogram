@@ -85,6 +85,13 @@ NODE_ENV=production npm run build:weapp
 - Verified with `npm run check:domain`, `npm run check:about-data`, `npx tsc --noEmit`, and `NODE_ENV=production npm run build:weapp`.
 - Secret scan found only boundary-text references; no real AppSecret, token, env file, or key material was added.
 
+## 2026-07-04 Mini Program Sync Payload Boundary
+
+- Added a pure sync payload builder for the 0.2 client foundation.
+- `pushOwnedState` now calls `POST /v1/sync/push`, but remains unwired from UI and does not change current local-only behavior.
+- Domain checks prove push payloads strip any local `ownerUserId`; the server remains the source of truth for ownership.
+- Verified with `npm run check:domain`, `npm run check:about-data`, `npx tsc --noEmit`, and `NODE_ENV=production npm run build:weapp`.
+
 ## Git 安全边界
 
 不要提交以下内容：
