@@ -125,6 +125,16 @@ dist/
 AppSecret
 ```
 
+## 2026-07-05 CloudBase deployment follow-up
+
+- Created/confirmed WeChat CloudBase environment for the mini program.
+- Environment display name: `cloud1`; real EnvID for builds: `cloud1-d0gae5atcb0f634b3`.
+- Cloud function `syncAccountData` is visible in CloudBase console and status is `deployed`.
+- Deployed local `cloudfunctions/syncAccountData` through WeChat DevTools with cloud-side dependency installation from the main workspace.
+- Fixed Taro build constants so `TARO_APP_API_BASE_URL` and `TARO_APP_CLOUDBASE_ENV_ID` are compiled into the weapp bundle instead of leaving runtime `process.env` references.
+- Rebuilt with `TARO_APP_CLOUDBASE_ENV_ID=cloud1-d0gae5atcb0f634b3`; DevTools preview no longer shows `process is not defined`.
+- Current gate: do not upload `0.2.0` until real-device CloudBase login/sync checks pass, including same-account pull and second-account isolation, and the user explicitly confirms upload.
+
 ## 后续方向
 
 1. 当前 `0.1.3` 已提交微信代码审核，下一步等待审核结果；审核通过后的正式发布、扫码、验证码、人脸等敏感动作必须由用户确认或亲自操作。
