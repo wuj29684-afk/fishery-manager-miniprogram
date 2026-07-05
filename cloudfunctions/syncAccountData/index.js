@@ -17,9 +17,29 @@ try {
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
+const REQUIRED_COLLECTIONS = ["ponds", "records", "sync_revisions"];
+
 function stripOwner(item) {
   const { ownerUserId, ...rest } = item || {};
   return rest;
+}
+
+async function ensureCollections(db) {
+  if (typeof db.createCollection !== "function") {
+    return;
+  }
+
+  await Promise.all(
+    REQUIRED_COLLECTIONS.map((name) =>
+      db.createCollection(name).catch((error) => {
+        const message = String(error && (error.errMsg || error.message || error));
+        if (/exist|already|duplicate/i.test(message)) {
+          return;
+        }
+        throw error;
+      })
+    )
+  );
 }
 
 function normalizePayload(payload = {}) {
@@ -118,6 +138,7 @@ async function main(event, _context, deps = {}) {
   }
 
   const db = deps.db || cloud.database();
+  await ensureCollections(db);
   if (event.action === "push") {
     return pushOwnedState(db, openid, event.payload);
   }
@@ -132,6 +153,7 @@ async function main(event, _context, deps = {}) {
 
 exports.main = main;
 exports._test = {
+  ensureCollections,
   normalizePayload,
   pullOwnedState,
   pushOwnedState,

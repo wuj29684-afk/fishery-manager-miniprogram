@@ -88,6 +88,33 @@ function createDb(seed = {}) {
   };
   return {
     store,
+    async createCollection(name) {
+      if (store[name]) {
+        throw new Error("collection already exists");
+      }
+      store[name] = {};
+      return {};
+    },
+    collection(name) {
+      return new MemoryCollection(name, store);
+    },
+    serverDate() {
+      return new Date("2026-07-05T00:00:00.000Z");
+    }
+  };
+}
+
+function createEmptyDb() {
+  const store = {};
+  return {
+    store,
+    async createCollection(name) {
+      if (store[name]) {
+        throw new Error("collection already exists");
+      }
+      store[name] = {};
+      return {};
+    },
     collection(name) {
       return new MemoryCollection(name, store);
     },
@@ -126,6 +153,15 @@ describe("syncAccountData cloud function", () => {
         }),
       /pond not found/
     );
+  });
+
+  it("creates required collections in a fresh CloudBase database", async () => {
+    const db = createEmptyDb();
+
+    const result = await _test.main({ action: "pull" }, {}, { db, wxContext: { OPENID: "openid_a" } });
+
+    assert.deepEqual(Object.keys(db.store).sort(), ["ponds", "records", "sync_revisions"]);
+    assert.deepEqual(result, { serverRevision: 0, ponds: [], records: [] });
   });
 
   it("pushes and pulls only current openid data", async () => {
