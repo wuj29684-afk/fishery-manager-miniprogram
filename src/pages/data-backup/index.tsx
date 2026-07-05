@@ -168,23 +168,23 @@ export default function DataBackupPage() {
         <Text className="sync-status">
           {getAccountSyncStatusText()}
         </Text>
-        <Text className={`copy-button ${isCloudSyncConfigured() ? "primary" : "disabled"}`} onClick={handleBindLocalData}>
+        <View className={`copy-button ${isCloudSyncConfigured() ? "primary" : "disabled"}`} onClick={handleBindLocalData}>
           {syncing ? "同步中..." : "绑定本机数据到账号"}
-        </Text>
-        <Text className={`copy-button ${isCloudSyncConfigured() ? "" : "disabled"}`} onClick={handleUseAccountData}>
+        </View>
+        <View className={`copy-button ${isCloudSyncConfigured() ? "" : "disabled"}`} onClick={handleUseAccountData}>
           使用账号数据
-        </Text>
+        </View>
         <Text className="hint">云同步按微信登录账号隔离塘口和记录；覆盖本机前会二次确认。</Text>
       </View>
 
       <View className="action-section">
         <Text className="section-title">复制备份</Text>
-        <Text className="copy-button primary" onClick={handleCopyJson}>
+        <View className="copy-button primary" onClick={handleCopyJson}>
           复制完整 JSON
-        </Text>
-        <Text className="copy-button" onClick={handleCopyCsv}>
+        </View>
+        <View className="copy-button" onClick={handleCopyCsv}>
           复制记录 CSV
-        </Text>
+        </View>
       </View>
 
       <View className="restore-section">
@@ -197,9 +197,9 @@ export default function DataBackupPage() {
           onInput={(event) => setImportText(event.detail.value)}
         />
         <Text className="danger-copy">恢复会覆盖本机当前塘口和记录，请先确认已有备份。</Text>
-        <Text className="restore-button" onClick={handleRestore}>
+        <View className="restore-button" onClick={handleRestore}>
           {restoring ? "恢复中..." : "恢复 JSON 备份"}
-        </Text>
+        </View>
       </View>
 
       <View className="preview-section">
