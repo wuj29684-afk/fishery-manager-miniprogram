@@ -70,7 +70,7 @@ export default function DataBackupPage() {
     const confirm = await Taro.showModal({
       title: "确认恢复备份",
       content: `将用备份覆盖本机当前数据：${result.state.ponds.length} 个塘口，${result.state.records.length} 条记录。此操作不可撤销。`,
-      confirmText: "确认恢复",
+      confirmText: "恢复",
       confirmColor: "#c43d2b"
     });
     if (!confirm.confirm) return;
@@ -99,7 +99,7 @@ export default function DataBackupPage() {
     const confirm = await Taro.showModal({
       title: "绑定本机数据到账号",
       content: `将登录微信并把本机 ${state.ponds.length} 个塘口、${state.records.length} 条记录同步到当前账号。`,
-      confirmText: "登录并绑定",
+      confirmText: "绑定",
       confirmColor: "#0f4d1f"
     });
     if (!confirm.confirm) return;
@@ -123,7 +123,7 @@ export default function DataBackupPage() {
       const confirm = await Taro.showModal({
         title: "使用账号数据",
         content: `将用账号云端数据覆盖本机：${localState.ponds.length} 个塘口，${localState.records.length} 条记录。建议先复制 JSON 备份。`,
-        confirmText: "确认覆盖",
+        confirmText: "覆盖",
         confirmColor: "#c43d2b"
       });
       if (!confirm.confirm) return;
