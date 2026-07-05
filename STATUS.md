@@ -102,6 +102,14 @@ NODE_ENV=production npm run build:weapp
 - Final local verification for this 0.2 readiness pass: `npm run check:domain`, `npm run check:about-data`, `npx tsc --noEmit`, and production `npm run build:weapp`.
 - Safety scan found only boundary documentation and environment variable names; no real AppSecret, token, `.env`, key, JKS, or keystore material was added.
 
+## 2026-07-05 CloudBase Sync Route
+
+- Added WeChat CloudBase as the default 0.2 sync route because no independent HTTPS API domain is currently available.
+- Preserved the HTTPS API/Vercel route as fallback when `TARO_APP_API_BASE_URL` is configured and `TARO_APP_CLOUDBASE_ENV_ID` is not configured.
+- Added `TARO_APP_CLOUDBASE_ENV_ID`, app-level `wx.cloud.init`, account sync facade, and cloud function `cloudfunctions/syncAccountData`.
+- Cloud function sync is isolated by CloudBase `OPENID`; client-provided `ownerUserId` is stripped/ignored.
+- Upload remains gated: do not upload `0.2.0` until the CloudBase environment is created, `syncAccountData` is deployed, real-device same-account and second-account isolation checks pass, and the user explicitly confirms upload.
+
 ## Git 安全边界
 
 不要提交以下内容：

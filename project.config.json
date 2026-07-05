@@ -31,6 +31,7 @@
   "libVersion": "3.16.1",
   "miniprogramRoot": "dist/",
   "srcMiniprogramRoot": "dist/",
+  "cloudfunctionRoot": "cloudfunctions/",
   "condition": {},
   "simulatorPluginLibVersion": {},
   "packOptions": {

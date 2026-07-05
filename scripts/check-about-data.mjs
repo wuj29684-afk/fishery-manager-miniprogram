@@ -32,6 +32,7 @@ if (!reviewChecklistPath) {
 const aboutPage = fs.readFileSync(aboutPagePath, "utf8");
 const dataBackupPage = readText("src/pages/data-backup/index.tsx");
 const apiConfig = readText("src/config/api.ts");
+const accountSyncService = readText("src/services/account-sync-service.ts");
 const reviewChecklist = fs.readFileSync(reviewChecklistPath, "utf8");
 const officialMiniProgramName = "渔儿小助手";
 
@@ -67,11 +68,20 @@ assertIncludes(reviewChecklist, officialMiniProgramName, "review checklist");
   "账号同步",
   "绑定本机数据到账号",
   "使用账号数据",
-  "暂未配置云同步服务",
+  "getAccountSyncStatusText",
   "createLocalStateFromPullResult"
 ].forEach((copy) => assertIncludes(dataBackupPage, copy, "data backup page"));
 
+[
+  "云开发同步已配置",
+  "HTTPS 云同步服务已配置",
+  "暂未配置云同步服务",
+  "pushOwnedStateWithCloudBase"
+].forEach((copy) => assertIncludes(accountSyncService, copy, "account sync service"));
+
 assertIncludes(apiConfig, "TARO_APP_API_BASE_URL", "api config");
+assertIncludes(apiConfig, "TARO_APP_CLOUDBASE_ENV_ID", "api config");
+assertIncludes(apiConfig, "cloudbase", "api config");
 assertIncludes(apiConfig, "https://", "api config");
 
 console.log("about/data smoke checks passed");

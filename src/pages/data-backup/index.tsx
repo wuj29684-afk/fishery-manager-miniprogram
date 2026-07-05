@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import Taro from "@tarojs/taro";
 import { Text, Textarea, View } from "@tarojs/components";
-import { API_BASE_URL, isCloudSyncConfigured } from "../../config/api";
+import { isCloudSyncConfigured } from "../../config/api";
 import { createJsonBackup, createRecordsCsv, parseJsonBackup } from "../../domain/export";
 import { createId } from "../../domain/id";
 import { createLocalStateFromPullResult } from "../../domain/sync-state";
-import { loginWithServer } from "../../services/auth-client";
-import { pullOwnedState, pushOwnedState } from "../../services/sync-client";
+import { getAccountSyncStatusText, pullAccountState, pushAccountState } from "../../services/account-sync-service";
 import { loadFarmState, saveFarmState } from "../../storage/farm-store";
 import type { FarmState } from "../../types";
 import "./index.scss";
@@ -107,8 +106,7 @@ export default function DataBackupPage() {
 
     setSyncing(true);
     try {
-      const session = await loginWithServer(API_BASE_URL);
-      const result = await pushOwnedState(API_BASE_URL, session.sessionToken, state, getDeviceId());
+      const result = await pushAccountState(state, getDeviceId());
       await Taro.showToast({ title: `已同步 ${result.ponds.length} 个塘口`, icon: "success" });
     } finally {
       setSyncing(false);
@@ -120,8 +118,7 @@ export default function DataBackupPage() {
 
     setSyncing(true);
     try {
-      const session = await loginWithServer(API_BASE_URL);
-      const result = await pullOwnedState(API_BASE_URL, session.sessionToken);
+      const result = await pullAccountState();
       const localState = createLocalStateFromPullResult(result);
       const confirm = await Taro.showModal({
         title: "使用账号数据",
@@ -169,7 +166,7 @@ export default function DataBackupPage() {
       <View className="sync-section">
         <Text className="section-title">账号同步</Text>
         <Text className="sync-status">
-          {isCloudSyncConfigured() ? "云同步服务已配置，可登录账号同步资料。" : "暂未配置云同步服务，本版本不会发起网络同步请求。"}
+          {getAccountSyncStatusText()}
         </Text>
         <Text className={`copy-button ${isCloudSyncConfigured() ? "primary" : "disabled"}`} onClick={handleBindLocalData}>
           {syncing ? "同步中..." : "绑定本机数据到账号"}
@@ -213,4 +210,3 @@ export default function DataBackupPage() {
     </View>
   );
 }
-

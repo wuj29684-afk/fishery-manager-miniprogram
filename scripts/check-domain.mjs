@@ -49,6 +49,7 @@ function compileDomainModules() {
       "src",
       "--outDir",
       outDir,
+      "src/config/api.ts",
       "src/types/index.ts",
       "src/domain/export.ts",
       "src/domain/id.ts",
@@ -101,6 +102,12 @@ await mkdir(outDir, { recursive: true });
 try {
   compileDomainModules();
   const require = createRequire(import.meta.url);
+  const apiConfigPath = join(outDir, "config", "api.js");
+  const apiConfigCacheKey = require.resolve(apiConfigPath);
+  function loadApiConfig() {
+    delete require.cache[apiConfigCacheKey];
+    return require(apiConfigPath);
+  }
   const { parseJsonBackup } = require(join(outDir, "domain", "export.js"));
   const { createId } = require(join(outDir, "domain", "id.js"));
   const { evaluatePondHealth } = require(join(outDir, "domain", "pond-health.js"));
@@ -108,6 +115,14 @@ try {
   const { createLocalStateFromPullResult } = require(join(outDir, "domain", "sync-state.js"));
   const { parseRequiredNumber, validateNumberRange } = require(join(outDir, "domain", "validation.js"));
   const { buildWeeklyReport } = require(join(outDir, "domain", "weekly-report.js"));
+
+  assert.equal(loadApiConfig().getAccountSyncMode(), "disabled", "sync mode should be disabled without cloudbase or https config");
+  process.env.TARO_APP_API_BASE_URL = "https://api.example.com";
+  assert.equal(loadApiConfig().getAccountSyncMode(), "http", "https API config should enable http sync fallback");
+  process.env.TARO_APP_CLOUDBASE_ENV_ID = "cloudbase-env-id";
+  assert.equal(loadApiConfig().getAccountSyncMode(), "cloudbase", "cloudbase config should take priority over http sync");
+  delete process.env.TARO_APP_API_BASE_URL;
+  delete process.env.TARO_APP_CLOUDBASE_ENV_ID;
 
   const ids = Array.from({ length: 50 }, () => createId("pond"));
   assert.equal(new Set(ids).size, ids.length, "createId should avoid collisions during burst creation");
