@@ -37,10 +37,26 @@ const reviewChecklist = fs.readFileSync(reviewChecklistPath, "utf8");
 const officialMiniProgramName = "渔儿小助手";
 
 assertIncludes(appConfig, "pages/about-data/index", "app config");
+assertIncludes(appConfig, "\"pages/account-login/index\"", "app config");
 assertIncludes(appConfig, officialMiniProgramName, "app config");
 assertIncludes(homePage, "/pages/about-data/index", "home page");
 assertIncludes(homePage, "关于与数据", "home page");
 assertIncludes(homePage, officialMiniProgramName, "home page");
+
+const loginPagePath = path.join(root, "src/pages/account-login/index.tsx");
+if (!fs.existsSync(loginPagePath)) {
+  throw new Error("account-login page must exist");
+}
+const loginPage = fs.readFileSync(loginPagePath, "utf8");
+
+[
+  "使用当前微信账号进入",
+  "登录时同步账号数据",
+  "绑定本机数据到账号",
+  "使用账号数据",
+  "pushAccountState",
+  "pullAccountState"
+].forEach((copy) => assertIncludes(loginPage, copy, "account-login page"));
 
 [
   officialMiniProgramName,
@@ -50,7 +66,7 @@ assertIncludes(homePage, officialMiniProgramName, "home page");
   "客户端传入的 ownerUserId 会被忽略",
   "当前体验版暂无在线客服",
   "AppSecret 只能放在服务端",
-  "0.2.1 体验版",
+  "0.2.2 体验版",
   "已完成备案"
 ].forEach((copy) => assertIncludes(aboutPage, copy, "about-data page"));
 

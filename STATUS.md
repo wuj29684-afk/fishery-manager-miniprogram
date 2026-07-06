@@ -9,8 +9,8 @@
 - 当前分支：`main`
 - 当前提交：以远端 `main` 最新提交为准
 - 小程序 AppID：`wxa516d96010f19988`
-- 体验版版本号：`0.2.1`；CloudBase 账号同步文案一致性修正版已上传并覆盖体验版
-- 体验版：已上传，最新 `0.2.1` 已完成代码上传；仍未正式发布
+- 体验版版本号：已上传 `0.2.1`；`0.2.2` 首屏账号进入版正在准备验证/上传
+- 体验版：已上传 `0.2.1`；`0.2.2` 尚未上传；仍未正式发布
 - 正式审核/正式发布：小程序备案已通过；当前仍未正式发布；后续提交审核、正式发布、扫码、验证码、人脸等敏感动作必须由用户确认或亲自操作
 - 技术栈：Taro + React + TypeScript
 
@@ -25,6 +25,7 @@
 - JSON 备份复制
 - JSON 导入恢复，恢复前有格式校验和二次确认
 - CSV 记录导出复制
+- 首屏账号进入，登录时拉取账号数据或绑定本机数据
 - 微信云开发账号同步，按当前微信账号隔离塘口和记录
 - 关于与数据说明页
 - 审核前材料清单
@@ -42,6 +43,17 @@
 除用户主动触发的微信云开发账号同步外，不接入其他网络请求。账号同步使用当前微信身份静默识别，不要求输入手机号、头像昵称或单独账号密码。
 
 AppSecret 只能放在服务端，不能写入小程序代码、配置、日志或仓库。
+
+## 2026-07-06 CloudBase 0.2.2 account entry readiness
+
+- Added `pages/account-login/index` as the first mini program page.
+- The account entry page lets the user enter with the current WeChat account, pull account data at login, or bind local pond/record data to the current account after confirmation.
+- Updated “关于与数据说明” to `0.2.2 体验版` and updated the review path to start with `账号进入`.
+- Updated upload/review checklist wording for `0.2.2`: first-screen account entry, login-time sync, current-WeChat identity, no phone/avatar/password, no payment, no location, no file/image upload, no AppSecret.
+- Fresh verification passed: `npm run check:about-data`, `npm run check:domain`, `npx tsc --noEmit`, and production `npm run build:weapp` with `TARO_APP_CLOUDBASE_ENV_ID=cloud1-d0gae5atcb0f634b3`.
+- Build output confirms `pages/account-login/index` is the first page and `dist/pages/account-login/` files exist.
+- Safety checks found no tracked `node_modules/`, `dist/`, `.swc/`, `.env`, key, JKS, or keystore files. Sensitive-term scan found only boundary documentation, environment variable names, and false positives such as CSS `task-*`; no secret value was found.
+- `0.2.2` has not been uploaded yet; upload remains gated on explicit user confirmation and WeChat DevTools visual verification.
 
 ## 验证命令
 
