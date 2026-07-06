@@ -54,6 +54,8 @@ const loginPage = fs.readFileSync(loginPagePath, "utf8");
   "登录时同步账号数据",
   "绑定本机数据到账号",
   "使用账号数据",
+  "账号同步暂时失败",
+  "进入本机数据",
   "pushAccountState",
   "pullAccountState"
 ].forEach((copy) => assertIncludes(loginPage, copy, "account-login page"));
@@ -66,7 +68,7 @@ const loginPage = fs.readFileSync(loginPagePath, "utf8");
   "客户端传入的 ownerUserId 会被忽略",
   "当前体验版暂无在线客服",
   "AppSecret 只能放在服务端",
-  "0.2.2 体验版",
+  "0.2.3 体验版",
   "已完成备案"
 ].forEach((copy) => assertIncludes(aboutPage, copy, "about-data page"));
 

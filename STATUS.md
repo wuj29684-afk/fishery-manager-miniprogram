@@ -57,6 +57,15 @@ AppSecret 只能放在服务端，不能写入小程序代码、配置、日志�
 - WeChat DevTools upload succeeded for version `0.2.2` at about 2026-07-06 10:11 with upload note `login-entry: 首屏账号进入与登录时同步`; the overwrite-experience-version prompt was confirmed after user approval.
 - `0.2.2` is uploaded as the experience/development version; it is still not formally released.
 
+## 2026-07-06 CloudBase 0.2.3 account entry fallback hotfix
+
+- User reported that tapping the first-screen “使用当前微信账号进入” failed.
+- WeChat DevTools reproduction showed toast `账号同步失败，请稍后重试`; debugger showed `Error: timeout` from the mini program runtime after the CloudBase sync call.
+- Added a login-entry fallback: when account sync fails, the page now shows `账号同步暂时失败` with the original error message and a safe `进入本机数据` action, so users are not blocked from local data by a transient cloud sync failure.
+- Bumped the mini program package/about-data version to `0.2.3`.
+- Fresh verification passed: `npm run check:about-data`, `npm run check:domain`, `npx tsc --noEmit`, and production `npm run build:weapp`.
+- `0.2.3` has not been uploaded yet; uploading the fixed experience version still needs explicit user confirmation.
+
 ## 验证命令
 
 ```bash

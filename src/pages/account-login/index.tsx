@@ -93,7 +93,16 @@ export default function AccountLoginPage() {
 
       enterDashboard();
     } catch (error) {
-      await Taro.showToast({ title: getErrorMessage(error), icon: "none" });
+      const confirm = await Taro.showModal({
+        title: "账号同步暂时失败",
+        content: `${getErrorMessage(error)}。可以先进入本机数据，稍后再到数据备份页重试账号同步。`,
+        confirmText: "进入本机数据",
+        confirmColor: "#0f4d1f",
+        cancelText: "留在此页"
+      });
+      if (confirm.confirm) {
+        enterDashboard();
+      }
     } finally {
       setSyncing(false);
     }

@@ -10,7 +10,7 @@ const summaryCards = [
   },
   {
     label: "版本状态",
-    value: "0.2.2 体验版",
+    value: "0.2.3 体验版",
     detail: "已完成备案、首屏账号进入和云同步体验验证，仍未正式发布。"
   },
   {
