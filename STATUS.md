@@ -9,8 +9,8 @@
 - 当前分支：`main`
 - 当前提交：以远端 `main` 最新提交为准
 - 小程序 AppID：`wxa516d96010f19988`
-- 体验版版本号：已上传 `0.2.2`；首屏账号进入与登录时同步版已覆盖体验版
-- 体验版：已上传 `0.2.2`；仍未正式发布
+- 体验版版本号：已上传 `0.2.3`；账号同步超时可进入本机数据热修版已覆盖体验版
+- 体验版：已上传 `0.2.3`；仍未正式发布
 - 正式审核/正式发布：小程序备案已通过；当前仍未正式发布；后续提交审核、正式发布、扫码、验证码、人脸等敏感动作必须由用户确认或亲自操作
 - 技术栈：Taro + React + TypeScript
 
@@ -64,7 +64,8 @@ AppSecret 只能放在服务端，不能写入小程序代码、配置、日志�
 - Added a login-entry fallback: when account sync fails, the page now shows `账号同步暂时失败` with the original error message and a safe `进入本机数据` action, so users are not blocked from local data by a transient cloud sync failure.
 - Bumped the mini program package/about-data version to `0.2.3`.
 - Fresh verification passed: `npm run check:about-data`, `npm run check:domain`, `npx tsc --noEmit`, and production `npm run build:weapp`.
-- `0.2.3` has not been uploaded yet; uploading the fixed experience version still needs explicit user confirmation.
+- WeChat DevTools upload succeeded for version `0.2.3` at about 2026-07-06 14:35 with upload note `sync-fallback: 账号同步超时可进入本机数据`.
+- `0.2.3` is uploaded as the experience/development version; it is still not formally released.
 
 ## 验证命令
 
