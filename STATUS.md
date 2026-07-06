@@ -143,6 +143,7 @@ AppSecret
 - Upload preflight passed: `npm run check:domain`, `npm run check:about-data`, `npx tsc --noEmit`, and production `npm run build:weapp`.
 - Safety scan found no tracked `node_modules/`, `dist/`, `.swc`, `.env`, key, JKS, or keystore files; sensitive-word hits were policy text, environment variable names, and server-side config references only.
 - WeChat DevTools upload succeeded for version `0.2.0`; the upload dialog warned this overwrites the current experience version, and the user had already authorized uploading `0.2.x` experience version.
+- User scanned and tested the `0.2.0` experience version on a real device and confirmed there were no issues.
 - This is still not a formal release. Do not click formal publish/release or submit additional official steps without user confirmation.
 
 ## 后续方向
