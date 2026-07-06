@@ -135,6 +135,16 @@ AppSecret
 - Rebuilt with `TARO_APP_CLOUDBASE_ENV_ID=cloud1-d0gae5atcb0f634b3`; DevTools preview no longer shows `process is not defined`.
 - Current gate: do not upload `0.2.0` until real-device CloudBase login/sync checks pass, including same-account pull and second-account isolation, and the user explicitly confirms upload.
 
+## 2026-07-06 CloudBase 0.2.0 experience upload
+
+- User explicitly confirmed uploading the `0.2.x` experience build.
+- Verified same-account CloudBase pull through WeChat DevTools before upload: `serverRevision: 9`, `ponds: 2`, `records: 4`.
+- Rebuilt the mini program with `TARO_APP_CLOUDBASE_ENV_ID=cloud1-d0gae5atcb0f634b3` and `NODE_ENV=production`.
+- Upload preflight passed: `npm run check:domain`, `npm run check:about-data`, `npx tsc --noEmit`, and production `npm run build:weapp`.
+- Safety scan found no tracked `node_modules/`, `dist/`, `.swc`, `.env`, key, JKS, or keystore files; sensitive-word hits were policy text, environment variable names, and server-side config references only.
+- WeChat DevTools upload succeeded for version `0.2.0`; the upload dialog warned this overwrites the current experience version, and the user had already authorized uploading `0.2.x` experience version.
+- This is still not a formal release. Do not click formal publish/release or submit additional official steps without user confirmation.
+
 ## 后续方向
 
 1. 当前 `0.1.3` 已提交微信代码审核，下一步等待审核结果；审核通过后的正式发布、扫码、验证码、人脸等敏感动作必须由用户确认或亲自操作。
