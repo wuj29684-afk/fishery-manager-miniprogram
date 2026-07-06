@@ -5,13 +5,13 @@ import "./index.scss";
 const summaryCards = [
   {
     label: "数据方式",
-    value: "仅本地存储",
-    detail: "当前数据仅保存在本机微信小程序本地存储。"
+    value: "本机优先 + 账号同步",
+    detail: "默认保存在本机；用户主动绑定或拉取时，通过微信云开发按当前微信账号隔离同步。"
   },
   {
     label: "版本状态",
-    value: "0.1.2 体验版",
-    detail: "已完成备案和真机验证，仍未正式发布。"
+    value: "0.2.1 体验版",
+    detail: "已完成备案、云同步体验验证，仍未正式发布。"
   },
   {
     label: "能力范围",
@@ -34,18 +34,21 @@ const featureItems = [
 ];
 
 const boundaryItems = [
-  "当前版本不上传服务器，不接入真实网络请求。",
-  "当前不接入微信登录、支付、定位、文件上传或图片上传。",
+  "默认经营数据先保存在本机微信小程序本地存储。",
+  "用户主动点击“绑定本机数据到账号”时，会通过微信云开发把塘口和记录同步到当前微信账号。",
+  "用户主动点击“使用账号数据”时，会拉取当前微信账号下的云端塘口和记录；覆盖本机前会二次确认。",
+  "账号同步按微信云开发 OPENID 隔离数据，客户端传入的 ownerUserId 会被忽略。",
+  "当前不接入支付、定位、文件上传或图片上传。",
   "AppSecret 只能放在服务端，当前小程序代码不包含 AppSecret。",
-  "本机卸载微信、清理小程序数据或更换设备后，本地数据可能无法自动恢复，请先使用数据备份。"
+  "本机卸载微信、清理小程序数据或更换设备后，本地数据可能无法自动恢复；如需恢复，请先使用 JSON 备份或账号同步。"
 ];
 
 const reviewPath = ["首页", "新增塘口", "快速记录", "塘口详情", "数据备份", "关于与数据"];
 
 const roadmapItems = [
-  "\u540e\u7eed\u5982\u63a5\u5165\u8d26\u53f7\u540c\u6b65\uff0c\u5c06\u6309\u767b\u5f55\u7528\u6237\u9694\u79bb\u5858\u53e3\u3001\u8bb0\u5f55\u548c\u5468\u62a5\u6570\u636e\u3002\u5f53\u524d\u7248\u672c\u4ecd\u53ea\u4f7f\u7528\u672c\u673a\u672c\u5730\u5b58\u50a8\u3002",
+  "继续完善隐私政策、用户协议、服务类目和审核截图素材，使说明与云同步能力保持一致。",
   "发布前继续复核隐私政策、用户协议、服务类目和审核截图素材。",
-  "登录、云端同步、异常提醒和数据模型升级会在正式确认后分阶段推进。",
+  "异常提醒、数据模型升级和多设备同步体验会在正式确认后分阶段推进。",
   "正式接入服务端时，AppSecret 仍只放在服务端，不进入小程序代码、配置或日志。"
 ];
 
@@ -93,8 +96,8 @@ export default function AboutDataPage() {
 
       <InfoSection title="数据与隐私边界">
         <View className="boundary-box">
-          <Text className="boundary-title">本地数据优先</Text>
-          <Text className="boundary-copy">当前数据仅保存在本机微信小程序本地存储。</Text>
+          <Text className="boundary-title">本机优先，主动同步</Text>
+          <Text className="boundary-copy">未点击账号同步时，数据只写入本机；点击同步后，塘口和记录按当前微信账号隔离保存到微信云开发。</Text>
         </View>
         {boundaryItems.map((item) => (
           <Text className="list-row" key={item}>

@@ -44,11 +44,13 @@ assertIncludes(homePage, officialMiniProgramName, "home page");
 
 [
   officialMiniProgramName,
-  "当前数据仅保存在本机微信小程序本地存储",
-  "当前版本不上传服务器，不接入真实网络请求",
+  "本机优先 + 账号同步",
+  "用户主动点击“绑定本机数据到账号”",
+  "微信云开发按当前微信账号隔离同步",
+  "客户端传入的 ownerUserId 会被忽略",
   "当前体验版暂无在线客服",
   "AppSecret 只能放在服务端",
-  "0.1.2 体验版",
+  "0.2.1 体验版",
   "已完成备案"
 ].forEach((copy) => assertIncludes(aboutPage, copy, "about-data page"));
 

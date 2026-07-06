@@ -1,6 +1,6 @@
 # STATUS - fishery-manager-miniprogram
 
-> 最后更新：2026-07-04
+> 最后更新：2026-07-06
 > 仓库：`https://github.com/wuj29684-afk/fishery-manager-miniprogram`
 > 来源：`fishery-manager/miniprogram/`
 
@@ -9,9 +9,9 @@
 - 当前分支：`main`
 - 当前提交：以远端 `main` 最新提交为准
 - 小程序 AppID：`wxa516d96010f19988`
-- 体验版版本号：`0.1.3`；改名同步版已上传并覆盖体验版
-- 体验版：已上传，最新 `0.1.3` 已完成代码上传并已提交微信代码审核；仍未正式发布
-- 正式审核/正式发布：小程序备案已通过；`0.1.3` 已提交微信代码审核（用户于 2026-07-04 告知“在审核了”）；当前仍未正式发布
+- 体验版版本号：`0.2.1`；CloudBase 账号同步文案一致性修正版已上传并覆盖体验版
+- 体验版：已上传，最新 `0.2.1` 已完成代码上传；仍未正式发布
+- 正式审核/正式发布：小程序备案已通过；当前仍未正式发布；后续提交审核、正式发布、扫码、验证码、人脸等敏感动作必须由用户确认或亲自操作
 - 技术栈：Taro + React + TypeScript
 
 ## 已完成功能
@@ -25,20 +25,21 @@
 - JSON 备份复制
 - JSON 导入恢复，恢复前有格式校验和二次确认
 - CSV 记录导出复制
+- 微信云开发账号同步，按当前微信账号隔离塘口和记录
 - 关于与数据说明页
 - 审核前材料清单
 
 ## 当前边界
 
-当前版本仍是本地数据 MVP，不包含：
+当前版本为本机优先 + 微信云开发账号同步体验版，不包含：
 
-- 微信登录
 - 支付
-- 真实网络请求
 - 文件或图片上传
 - 定位
 - AppSecret
 - 正式发布
+
+除用户主动触发的微信云开发账号同步外，不接入其他网络请求。账号同步使用当前微信身份静默识别，不要求输入手机号、头像昵称或单独账号密码。
 
 AppSecret 只能放在服务端，不能写入小程序代码、配置、日志或仓库。
 
@@ -144,6 +145,16 @@ AppSecret
 - Safety scan found no tracked `node_modules/`, `dist/`, `.swc`, `.env`, key, JKS, or keystore files; sensitive-word hits were policy text, environment variable names, and server-side config references only.
 - WeChat DevTools upload succeeded for version `0.2.0`; the upload dialog warned this overwrites the current experience version, and the user had already authorized uploading `0.2.x` experience version.
 - User scanned and tested the `0.2.0` experience version on a real device and confirmed there were no issues.
+- This is still not a formal release. Do not click formal publish/release or submit additional official steps without user confirmation.
+
+## 2026-07-06 CloudBase 0.2.1 copy consistency upload
+
+- Updated the home trust banner, data backup entry copy, About/Data page, release checklist, and status copy so they describe the actual 0.2 behavior: local-first storage plus user-initiated WeChat CloudBase account sync.
+- Mini program package version is now `0.2.1`.
+- Verified old "local-only/no upload/no network" user-facing copy no longer appears in the current mini program source, smoke script, release checklist, or current STATUS text.
+- Upload preflight passed in both mini program repos: `npm run check:domain`, `npm run check:about-data`, `npx tsc --noEmit`, and production `npm run build:weapp` with `TARO_APP_CLOUDBASE_ENV_ID=cloud1-d0gae5atcb0f634b3`.
+- Safety scan found no tracked `node_modules/`, `dist/`, `.swc`, `.env`, key, JKS, or keystore files; sensitive-word hits were policy text, environment variable names, and server-side config references only.
+- WeChat DevTools upload succeeded for version `0.2.1` with upload note `copy-sync: 修正云同步文案与审核说明`.
 - This is still not a formal release. Do not click formal publish/release or submit additional official steps without user confirmation.
 
 ## 后续方向

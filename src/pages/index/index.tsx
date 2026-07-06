@@ -221,7 +221,7 @@ export default function IndexPage() {
         <View className="action-card action-gold" onClick={() => Taro.navigateTo({ url: "/pages/data-backup/index" })}>
           <Text className="action-mark">备</Text>
           <Text className="action-title">数据备份</Text>
-          <Text className="action-detail">本地数据备份管理</Text>
+          <Text className="action-detail">备份与账号同步</Text>
         </View>
       </View>
 
@@ -402,8 +402,8 @@ export default function IndexPage() {
         <View className="trust-content">
           <Text className="trust-icon">✓</Text>
           <View>
-            <Text className="trust-title">数据仅保存在本机，不上传服务器</Text>
-            <Text className="trust-detail">本地存储 · 安全可控 · 经营无忧</Text>
+            <Text className="trust-title">默认本机保存，主动按账号同步</Text>
+            <Text className="trust-detail">微信云开发 · 账号隔离 · 覆盖前确认</Text>
           </View>
         </View>
       </View>
