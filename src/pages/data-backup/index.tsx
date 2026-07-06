@@ -14,6 +14,10 @@ type ExportKind = "json" | "csv";
 
 const DEVICE_ID_KEY = "fishery-manager:device-id:v1";
 
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error && error.message ? error.message : "操作失败，请稍后重试";
+}
+
 function getDeviceId(): string {
   const existing = Taro.getStorageSync<string>(DEVICE_ID_KEY);
   if (existing) {
@@ -98,7 +102,7 @@ export default function DataBackupPage() {
     if (!state || syncing || !(await ensureCloudSyncReady())) return;
     const confirm = await Taro.showModal({
       title: "绑定本机数据到账号",
-      content: `将登录微信并把本机 ${state.ponds.length} 个塘口、${state.records.length} 条记录同步到当前账号。`,
+      content: `将使用当前微信账号身份，把本机 ${state.ponds.length} 个塘口、${state.records.length} 条记录同步到账号。`,
       confirmText: "绑定",
       confirmColor: "#0f4d1f"
     });
@@ -108,6 +112,8 @@ export default function DataBackupPage() {
     try {
       const result = await pushAccountState(state, getDeviceId());
       await Taro.showToast({ title: `已同步 ${result.ponds.length} 个塘口`, icon: "success" });
+    } catch (error) {
+      await Taro.showToast({ title: getErrorMessage(error), icon: "none" });
     } finally {
       setSyncing(false);
     }
@@ -131,6 +137,8 @@ export default function DataBackupPage() {
       saveFarmState(localState);
       await refresh();
       await Taro.showToast({ title: "账号数据已恢复", icon: "success" });
+    } catch (error) {
+      await Taro.showToast({ title: getErrorMessage(error), icon: "none" });
     } finally {
       setSyncing(false);
     }
