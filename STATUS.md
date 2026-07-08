@@ -9,8 +9,8 @@
 - 当前分支：`main`
 - 当前提交：以远端 `main` 最新提交为准
 - 小程序 AppID：`wxa516d96010f19988`
-- 体验版版本号：已上传 `0.2.3`；`0.2.4` 登录页绑定入口与 CloudBase 启动容错修复已通过真机预览，待用户确认后再上传体验版
-- 体验版：已上传 `0.2.3`；`0.2.4` 尚未上传；仍未正式发布
+- 体验版版本号：已上传 `0.2.4`；登录页绑定入口与 CloudBase 启动容错修复已通过真机预览并完成体验版上传
+- 体验版：已上传 `0.2.4`；仍未正式发布
 - 正式审核/正式发布：小程序备案已通过；当前仍未正式发布；后续提交审核、正式发布、扫码、验证码、人脸等敏感动作必须由用户确认或亲自操作
 - 技术栈：Taro + React + TypeScript
 
@@ -76,7 +76,7 @@ AppSecret 只能放在服务端，不能写入小程序代码、配置、日志�
 - Bumped the mini program package/about-data version to `0.2.4`.
 - Fresh verification passed: `npm run check:domain`, `npm run check:about-data`, `npx tsc --noEmit`, and production `npm run build:weapp` with `TARO_APP_CLOUDBASE_ENV_ID=cloud1-d0gae5atcb0f634b3`.
 - WeChat DevTools current-page preview showed the new three-action login page, and the user scanned the preview and confirmed the bind flow works.
-- `0.2.4` is not uploaded yet. Uploading a new experience version still requires explicit user confirmation.
+- WeChat DevTools upload succeeded for version `0.2.4` at about 2026-07-08 16:49 with upload note `login-bind-fix: account login bind entry and cloud init tolerance`. `0.2.4` is uploaded as the experience/development version; it is still not formally released.
 
 ## 验证命令
 
