@@ -10,8 +10,8 @@ const summaryCards = [
   },
   {
     label: "版本状态",
-    value: "0.2.4 体验版",
-    detail: "已完成备案、首屏账号进入和云同步体验验证，仍未正式发布。"
+    value: "0.2.4 正式版",
+    detail: "已完成备案、首屏账号进入、云同步体验验证并正式上线。"
   },
   {
     label: "能力范围",
@@ -21,7 +21,7 @@ const summaryCards = [
   {
     label: "客服状态",
     value: "暂无在线客服",
-    detail: "当前体验版暂无在线客服，后续按正式运营需要补齐。"
+    detail: "当前线上版暂无在线客服，后续按运营需要补齐。"
   }
 ];
 
@@ -106,9 +106,9 @@ export default function AboutDataPage() {
         ))}
       </InfoSection>
 
-      <InfoSection title="体验版说明">
+      <InfoSection title="线上版说明">
         <Text className="section-copy">
-          当前版本用于体验和发布前复核，已完成备案、上传体验版并通过真机验证，仍未正式发布。
+          当前 0.2.4 版本已正式上线，支持本机优先记录和用户主动触发的微信云开发账号同步。
         </Text>
       </InfoSection>
 

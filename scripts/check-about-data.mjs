@@ -66,9 +66,9 @@ const loginPage = fs.readFileSync(loginPagePath, "utf8");
   "用户主动点击“绑定本机数据到账号”",
   "微信云开发按当前微信账号隔离同步",
   "客户端传入的 ownerUserId 会被忽略",
-  "当前体验版暂无在线客服",
+  "当前线上版暂无在线客服",
   "AppSecret 只能放在服务端",
-  "0.2.4 体验版",
+  "0.2.4 正式版",
   "已完成备案"
 ].forEach((copy) => assertIncludes(aboutPage, copy, "about-data page"));
 

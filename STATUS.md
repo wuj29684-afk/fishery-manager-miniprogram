@@ -9,9 +9,9 @@
 - 当前分支：`main`
 - 当前提交：以远端 `main` 最新提交为准
 - 小程序 AppID：`wxa516d96010f19988`
-- 体验版版本号：已上传 `0.2.4`；登录页绑定入口与 CloudBase 启动容错修复已通过真机预览并完成体验版上传
-- 体验版：已上传 `0.2.4`；仍未正式发布
-- 正式审核/正式发布：小程序备案已通过；当前仍未正式发布；后续提交审核、正式发布、扫码、验证码、人脸等敏感动作必须由用户确认或亲自操作
+- 线上版本号：已正式发布 `0.2.4`；登录页绑定入口与 CloudBase 启动容错修复已通过真机预览、体验版上传并正式上线
+- 正式版：用户于 2026-07-08 告知 `0.2.4` 已正式发布上线
+- 正式审核/正式发布：小程序备案已通过；当前 `0.2.4` 已正式发布上线；后续新版本提交审核、正式发布、扫码、验证码、人脸等敏感动作必须由用户确认或亲自操作
 - 技术栈：Taro + React + TypeScript
 
 ## 已完成功能
@@ -32,13 +32,12 @@
 
 ## 当前边界
 
-当前版本为本机优先 + 微信云开发账号同步体验版，不包含：
+当前版本为本机优先 + 微信云开发账号同步正式线上版，不包含：
 
 - 支付
 - 文件或图片上传
 - 定位
 - AppSecret
-- 正式发布
 
 除用户主动触发的微信云开发账号同步外，不接入其他网络请求。账号同步使用当前微信身份静默识别，不要求输入手机号、头像昵称或单独账号密码。
 
@@ -76,7 +75,7 @@ AppSecret 只能放在服务端，不能写入小程序代码、配置、日志�
 - Bumped the mini program package/about-data version to `0.2.4`.
 - Fresh verification passed: `npm run check:domain`, `npm run check:about-data`, `npx tsc --noEmit`, and production `npm run build:weapp` with `TARO_APP_CLOUDBASE_ENV_ID=cloud1-d0gae5atcb0f634b3`.
 - WeChat DevTools current-page preview showed the new three-action login page, and the user scanned the preview and confirmed the bind flow works.
-- WeChat DevTools upload succeeded for version `0.2.4` at about 2026-07-08 16:49 with upload note `login-bind-fix: account login bind entry and cloud init tolerance`. `0.2.4` is uploaded as the experience/development version; it is still not formally released.
+- WeChat DevTools upload succeeded for version `0.2.4` at about 2026-07-08 16:49 with upload note `login-bind-fix: account login bind entry and cloud init tolerance`. The user later confirmed `0.2.4` was formally released online on 2026-07-08.
 
 ## 验证命令
 
