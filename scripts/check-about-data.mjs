@@ -68,7 +68,7 @@ const loginPage = fs.readFileSync(loginPagePath, "utf8");
   "客户端传入的 ownerUserId 会被忽略",
   "当前体验版暂无在线客服",
   "AppSecret 只能放在服务端",
-  "0.2.3 体验版",
+  "0.2.4 体验版",
   "已完成备案"
 ].forEach((copy) => assertIncludes(aboutPage, copy, "about-data page"));
 

@@ -14,8 +14,13 @@ function initCloudBase() {
     return;
   }
 
-  wx.cloud.init({ env: CLOUDBASE_ENV_ID, traceUser: true });
-  cloudInitialized = true;
+  try {
+    wx.cloud.init({ env: CLOUDBASE_ENV_ID, traceUser: true });
+  } catch (error) {
+    console.warn("CloudBase init failed; account sync will report the retryable error when used.", error);
+  } finally {
+    cloudInitialized = true;
+  }
 }
 
 function App(props: { children: JSX.Element }) {

@@ -1,6 +1,6 @@
 # STATUS - fishery-manager-miniprogram
 
-> 最后更新：2026-07-06
+> 最后更新：2026-07-08
 > 仓库：`https://github.com/wuj29684-afk/fishery-manager-miniprogram`
 > 来源：`fishery-manager/miniprogram/`
 
@@ -9,8 +9,8 @@
 - 当前分支：`main`
 - 当前提交：以远端 `main` 最新提交为准
 - 小程序 AppID：`wxa516d96010f19988`
-- 体验版版本号：已上传 `0.2.3`；账号同步超时可进入本机数据热修版已覆盖体验版
-- 体验版：已上传 `0.2.3`；仍未正式发布
+- 体验版版本号：已上传 `0.2.3`；`0.2.4` 登录页绑定入口与 CloudBase 启动容错修复已通过真机预览，待用户确认后再上传体验版
+- 体验版：已上传 `0.2.3`；`0.2.4` 尚未上传；仍未正式发布
 - 正式审核/正式发布：小程序备案已通过；当前仍未正式发布；后续提交审核、正式发布、扫码、验证码、人脸等敏感动作必须由用户确认或亲自操作
 - 技术栈：Taro + React + TypeScript
 
@@ -66,6 +66,17 @@ AppSecret 只能放在服务端，不能写入小程序代码、配置、日志�
 - Fresh verification passed: `npm run check:about-data`, `npm run check:domain`, `npx tsc --noEmit`, and production `npm run build:weapp`.
 - WeChat DevTools upload succeeded for version `0.2.3` at about 2026-07-06 14:35 with upload note `sync-fallback: 账号同步超时可进入本机数据`.
 - `0.2.3` is uploaded as the experience/development version; it is still not formally released.
+
+## 2026-07-08 CloudBase 0.2.4 login bind fix
+
+- User reported that the first-screen bind action was confusing/unavailable and sync still appeared to fail.
+- Cloud function phone logs showed successful pull/push responses, so the failing layer was the mini program login UI/startup path rather than CloudBase data isolation.
+- Added a real first-screen `绑定本机数据到账号` button, renamed the main account action to `使用账号数据进入`, and kept `暂不同步，进入本机数据` as a separate local fallback.
+- Added better account-sync error extraction for Taro/CloudBase error shapes and made `wx.cloud.init` tolerant of DevTools/runtime timeout so the first page is not blocked by CloudBase init noise.
+- Bumped the mini program package/about-data version to `0.2.4`.
+- Fresh verification passed: `npm run check:domain`, `npm run check:about-data`, `npx tsc --noEmit`, and production `npm run build:weapp` with `TARO_APP_CLOUDBASE_ENV_ID=cloud1-d0gae5atcb0f634b3`.
+- WeChat DevTools current-page preview showed the new three-action login page, and the user scanned the preview and confirmed the bind flow works.
+- `0.2.4` is not uploaded yet. Uploading a new experience version still requires explicit user confirmation.
 
 ## 验证命令
 

@@ -63,11 +63,25 @@ function getRecordDocId(openid, recordId) {
   return `${openid}_${recordId}`;
 }
 
+function isMissingCollectionError(error) {
+  const message = String(error && (error.errMsg || error.message || error));
+  return /collection.*(not.*exist|not.*found)|not.*exist|does not exist|不存在|未找到/i.test(message);
+}
+
+async function getCollectionOrEmpty(query) {
+  return query.get().catch((error) => {
+    if (isMissingCollectionError(error)) {
+      return { data: [] };
+    }
+    throw error;
+  });
+}
+
 async function pullOwnedState(db, openid) {
   const [revisionResult, pondResult, recordResult] = await Promise.all([
-    db.collection("sync_revisions").where({ _openid: openid }).limit(1).get(),
-    db.collection("ponds").where({ _openid: openid }).orderBy("updatedAt", "desc").get(),
-    db.collection("records").where({ _openid: openid }).orderBy("createdAt", "desc").get()
+    getCollectionOrEmpty(db.collection("sync_revisions").where({ _openid: openid }).limit(1)),
+    getCollectionOrEmpty(db.collection("ponds").where({ _openid: openid }).orderBy("updatedAt", "desc")),
+    getCollectionOrEmpty(db.collection("records").where({ _openid: openid }).orderBy("createdAt", "desc"))
   ]);
 
   return {
@@ -138,8 +152,8 @@ async function main(event, _context, deps = {}) {
   }
 
   const db = deps.db || cloud.database();
-  await ensureCollections(db);
   if (event.action === "push") {
+    await ensureCollections(db);
     return pushOwnedState(db, openid, event.payload);
   }
   if (event.action === "pull") {
@@ -154,6 +168,7 @@ async function main(event, _context, deps = {}) {
 exports.main = main;
 exports._test = {
   ensureCollections,
+  isMissingCollectionError,
   normalizePayload,
   pullOwnedState,
   pushOwnedState,

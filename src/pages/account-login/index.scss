@@ -77,6 +77,7 @@
 }
 
 .primary-button,
+.bind-button,
 .secondary-button {
   margin-top: 22px;
   padding: 24px;
@@ -92,9 +93,17 @@
   color: #ffffff;
 }
 
-.primary-button.disabled {
+.primary-button.disabled,
+.bind-button.disabled {
   border-color: #b8cfbb;
   background: #b8cfbb;
+  color: #ffffff;
+}
+
+.bind-button {
+  border: 1px solid #2f7d57;
+  background: #e8f4eb;
+  color: #0f4d1f;
 }
 
 .secondary-button {

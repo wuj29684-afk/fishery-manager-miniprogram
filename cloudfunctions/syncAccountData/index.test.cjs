@@ -124,6 +124,27 @@ function createEmptyDb() {
   };
 }
 
+function createDbWithMissingCollections() {
+  return {
+    collection() {
+      return {
+        where() {
+          return this;
+        },
+        orderBy() {
+          return this;
+        },
+        limit() {
+          return this;
+        },
+        async get() {
+          throw new Error("collection not exists");
+        }
+      };
+    }
+  };
+}
+
 describe("syncAccountData cloud function", () => {
   it("sanitizes client owner fields", () => {
     const payload = _test.normalizePayload({
@@ -155,12 +176,50 @@ describe("syncAccountData cloud function", () => {
     );
   });
 
-  it("creates required collections in a fresh CloudBase database", async () => {
+  it("does not create collections during pull", async () => {
     const db = createEmptyDb();
 
     const result = await _test.main({ action: "pull" }, {}, { db, wxContext: { OPENID: "openid_a" } });
 
+    assert.deepEqual(Object.keys(db.store).sort(), []);
+    assert.deepEqual(result, { serverRevision: 0, ponds: [], records: [] });
+  });
+
+  it("creates required collections during push", async () => {
+    const db = createEmptyDb();
+
+    await _test.main(
+      {
+        action: "push",
+        payload: {
+          deviceId: "device-a",
+          ponds: [{ id: "pond_a", name: "Mine" }],
+          records: []
+        }
+      },
+      {},
+      { db, wxContext: { OPENID: "openid_a" } }
+    );
+
     assert.deepEqual(Object.keys(db.store).sort(), ["ponds", "records", "sync_revisions"]);
+  });
+
+  it("does not block pull on collection initialization", async () => {
+    const db = createDb();
+    db.createCollection = async () => {
+      throw new Error("create collection timeout");
+    };
+
+    const result = await _test.main({ action: "pull" }, {}, { db, wxContext: { OPENID: "openid_a" } });
+
+    assert.deepEqual(result, { serverRevision: 0, ponds: [], records: [] });
+  });
+
+  it("treats missing collections as empty account data during pull", async () => {
+    const db = createDbWithMissingCollections();
+
+    const result = await _test.main({ action: "pull" }, {}, { db, wxContext: { OPENID: "openid_a" } });
+
     assert.deepEqual(result, { serverRevision: 0, ponds: [], records: [] });
   });
 

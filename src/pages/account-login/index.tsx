@@ -12,7 +12,25 @@ import "./index.scss";
 const DEVICE_ID_KEY = "fishery-manager:device-id:v1";
 
 function getErrorMessage(error: unknown): string {
-  return error instanceof Error && error.message ? error.message : "账号同步失败，请稍后重试";
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  if (error && typeof error === "object") {
+    const detail = error as { errMsg?: unknown; errorMessage?: unknown; message?: unknown };
+    const message = detail.errMsg || detail.errorMessage || detail.message;
+    if (typeof message === "string" && message) {
+      return message;
+    }
+    try {
+      const serialized = JSON.stringify(error);
+      if (serialized && serialized !== "{}") {
+        return serialized.slice(0, 120);
+      }
+    } catch {
+      // Fall back to the generic copy below.
+    }
+  }
+  return "账号同步失败，请稍后重试";
 }
 
 function getDeviceId(): string {
@@ -76,21 +94,7 @@ export default function AccountLoginPage() {
         return;
       }
 
-      if (hasData(state)) {
-        const confirm = await Taro.showModal({
-          title: "绑定本机数据到账号",
-          content: `当前微信账号暂无云端资料。是否把本机 ${getCounts(state)} 绑定到当前微信账号？`,
-          confirmText: "绑定",
-          confirmColor: "#0f4d1f",
-          cancelText: "暂不同步"
-        });
-
-        if (confirm.confirm) {
-          await pushAccountState(state, getDeviceId());
-          await Taro.showToast({ title: "已绑定账号", icon: "success" });
-        }
-      }
-
+      await Taro.showToast({ title: "账号暂无云端数据", icon: "none" });
       enterDashboard();
     } catch (error) {
       const confirm = await Taro.showModal({
@@ -108,12 +112,57 @@ export default function AccountLoginPage() {
     }
   }
 
+  async function handleBindLocalToAccount() {
+    if (!state || syncing) return;
+
+    if (!isCloudSyncConfigured()) {
+      await Taro.showToast({ title: "云同步服务未配置", icon: "none" });
+      return;
+    }
+    if (!hasData(state)) {
+      await Taro.showToast({ title: "本机暂无可绑定数据", icon: "none" });
+      return;
+    }
+
+    setSyncing(true);
+    try {
+      const pulled = await pullAccountState();
+      const accountState = createLocalStateFromPullResult(pulled);
+      const confirm = await Taro.showModal({
+        title: "绑定本机数据到账号",
+        content: `将把本机 ${getCounts(state)} 同步到当前微信账号。账号云端当前有 ${getCounts(accountState)}；同一条资料会更新，不同资料会保留。`,
+        confirmText: "确认绑定",
+        confirmColor: "#0f4d1f",
+        cancelText: "暂不绑定"
+      });
+
+      if (!confirm.confirm) return;
+
+      const result = await pushAccountState(state, getDeviceId());
+      await Taro.showToast({ title: `已绑定 ${result.ponds.length} 个塘口`, icon: "success" });
+      enterDashboard();
+    } catch (error) {
+      const confirm = await Taro.showModal({
+        title: "绑定失败",
+        content: `${getErrorMessage(error)}。可以先进入本机数据，稍后再到数据备份页重试绑定。`,
+        confirmText: "进入本机数据",
+        confirmColor: "#0f4d1f",
+        cancelText: "留在此页"
+      });
+      if (confirm.confirm) {
+        enterDashboard();
+      }
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   return (
     <View className="login-page">
       <View className="login-hero">
         <Text className="eyebrow">渔儿小助手</Text>
-        <Text className="title">使用当前微信账号进入</Text>
-        <Text className="subtitle">登录时同步账号数据，塘口和记录按当前微信账号隔离保存。</Text>
+        <Text className="title">选择账号数据或本机数据</Text>
+        <Text className="subtitle">使用当前微信账号进入，登录时同步账号数据；塘口和记录按当前微信账号隔离保存。</Text>
       </View>
 
       <View className="login-panel">
@@ -126,12 +175,15 @@ export default function AccountLoginPage() {
           <Text className="status-value">微信云开发 · 账号隔离</Text>
         </View>
         <View className={`primary-button ${syncing ? "disabled" : ""}`} onClick={handleEnterWithAccount}>
-          {syncing ? "同步中..." : "使用当前微信账号进入"}
+          {syncing ? "同步中..." : "使用账号数据进入"}
+        </View>
+        <View className={`bind-button ${syncing ? "disabled" : ""}`} onClick={handleBindLocalToAccount}>
+          绑定本机数据到账号
         </View>
         <View className="secondary-button" onClick={enterDashboard}>
           暂不同步，进入本机数据
         </View>
-        <Text className="hint">如账号已有云端数据，会先询问是否使用账号数据；如账号暂无数据，可选择绑定本机数据到账号。</Text>
+        <Text className="hint">使用账号数据会拉取云端资料；绑定本机数据会把当前手机上的塘口和记录同步到此微信账号。</Text>
       </View>
 
       <View className="trust-list">
