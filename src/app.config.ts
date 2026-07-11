@@ -5,6 +5,7 @@ export default defineAppConfig({
     "pages/pond-detail/index",
     "pages/pond-form/index",
     "pages/record-form/index",
+    "pages/records/index",
     "pages/data-backup/index",
     "pages/about-data/index"
   ],

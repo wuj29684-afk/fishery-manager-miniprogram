@@ -4,7 +4,7 @@ import { Text, View } from "@tarojs/components";
 import { shortcuts } from "../../data/seed";
 import { formatArea, formatMoney } from "../../domain/format";
 import { calculateFeedCost, calculateRevenue, calculateSurvivalRate, calculateFcr, calculateTotalCost, getCultureDays, getPondAlert, getRecordTitle } from "../../domain/operations";
-import { deactivatePond, loadFarmState } from "../../storage/farm-store";
+import { deactivatePond, deletePond, loadFarmState } from "../../storage/farm-store";
 import type { FarmRecord, FarmState, Pond } from "../../types";
 import "./index.scss";
 
@@ -47,6 +47,27 @@ export default function PondDetailPage() {
     await refresh();
   }
 
+  async function handleDelete() {
+    if (!pond) return;
+    const first = await Taro.showModal({
+      title: "删除塘口",
+      content: "删除会永久移除该塘口及全部历史记录，并同步删除账号中的对应数据。",
+      confirmText: "继续",
+      confirmColor: "#c43d2b"
+    });
+    if (!first.confirm) return;
+    const second = await Taro.showModal({
+      title: "确认永久删除",
+      content: `确定永久删除“${pond.name}”吗？此操作不能直接恢复。`,
+      confirmText: "永久删除",
+      confirmColor: "#c43d2b"
+    });
+    if (!second.confirm) return;
+    await deletePond(pond.id);
+    await Taro.showToast({ title: "塘口已删除", icon: "success" });
+    Taro.reLaunch({ url: "/pages/index/index" });
+  }
+
   if (!pond) {
     return (
       <View className="detail-page">
@@ -82,6 +103,9 @@ export default function PondDetailPage() {
               停用塘口
             </Text>
           )}
+          <Text className="delete-button" onClick={handleDelete}>
+            删除塘口
+          </Text>
         </View>
       </View>
 

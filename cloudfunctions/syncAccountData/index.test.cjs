@@ -68,14 +68,14 @@ describe("syncAccountData v2", () => {
   it("pushes and pulls only current openid data", async () => {
     const db = createDb();
     await _test.main({ action: "push", payload: v2Payload([pond("pond-a")], [record("record-a")]) }, {}, { db, wxContext: { OPENID: "openid-a" } });
-    const a = await _test.main({ action: "pull" }, {}, { db, wxContext: { OPENID: "openid-a" } });
-    const b = await _test.main({ action: "pull" }, {}, { db, wxContext: { OPENID: "openid-b" } });
+    const a = await _test.main({ action: "pull", protocolVersion: 2 }, {}, { db, wxContext: { OPENID: "openid-a" } });
+    const b = await _test.main({ action: "pull", protocolVersion: 2 }, {}, { db, wxContext: { OPENID: "openid-b" } });
     assert.deepEqual(a.records.map((item) => item.id), ["record-a"]);
     assert.deepEqual(b.records, []);
   });
 
   it("returns conflict for stale base revision", async () => {
-    const db = createDb({ sync_revisions: { "openid-a_revision": { _openid: "openid-a", revision: 3 } } });
+    const db = createDb({ sync_revisions: { "openid-a_revision_v2": { _openid: "openid-a", dataEpoch: 2, revision: 3 } } });
     const result = await _test.pushOwnedState(db, "openid-a", v2Payload([pond("pond-a")], [], 2));
     assert.equal(result.conflict, true);
     assert.equal(result.serverRevision, 3);
@@ -91,8 +91,8 @@ describe("syncAccountData v2", () => {
 
   it("pulls more than two database pages completely", async () => {
     const records = {};
-    for (let index = 0; index < 550; index += 1) records["openid-a-r-" + index] = { _openid: "openid-a", recordId: "r-" + index, payload: record("r-" + index), updatedAt: new Date() };
-    const db = createDb({ ponds: { "openid-a_pond-a": { _openid: "openid-a", pondId: "pond-a", payload: pond("pond-a"), updatedAt: new Date() } }, records });
+    for (let index = 0; index < 550; index += 1) records["openid-a-r-" + index] = { _openid: "openid-a", dataEpoch: 2, recordId: "r-" + index, payload: record("r-" + index), updatedAt: new Date() };
+    const db = createDb({ ponds: { "openid-a_pond-a": { _openid: "openid-a", dataEpoch: 2, pondId: "pond-a", payload: pond("pond-a"), updatedAt: new Date() } }, records });
     const result = await _test.pullOwnedState(db, "openid-a");
     assert.equal(result.recordCount, 550);
     assert.equal(result.records.length, 550);
@@ -101,11 +101,20 @@ describe("syncAccountData v2", () => {
   it("legacy push preserves fields unknown to 0.2.4", async () => {
     const db = createDb({ ponds: { "openid-a_pond-a": { _openid: "openid-a", pondId: "pond-a", payload: { ...pond("pond-a"), stockingDate: "2026-07-01" }, updatedAt: new Date() } } });
     await _test.pushOwnedState(db, "openid-a", { deviceId: "old", ponds: [{ id: "pond-a", name: "旧客户端", species: "罗非鱼" }], records: [] });
-    const result = await _test.pullOwnedState(db, "openid-a");
+    const result = await _test.pullOwnedState(db, "openid-a", null);
     assert.equal(result.ponds[0].stockingDate, "2026-07-01");
   });
 
   it("rejects invalid integrity summary", () => {
     assert.throws(() => _test.normalizePayload({ ...v2Payload([pond("pond-a")], []), checksum: "bad" }), /checksum/);
+  });
+
+  it("starts v2 accounts from an empty data epoch while legacy pull remains available", async () => {
+    const legacyPond = { _openid: "openid-a", pondId: "old-pond", payload: pond("old-pond"), updatedAt: new Date() };
+    const db = createDb({ ponds: { "openid-a_old-pond": legacyPond } });
+    const current = await _test.main({ action: "pull", protocolVersion: 2 }, {}, { db, wxContext: { OPENID: "openid-a" } });
+    const legacy = await _test.main({ action: "pull" }, {}, { db, wxContext: { OPENID: "openid-a" } });
+    assert.deepEqual(current.ponds, []);
+    assert.deepEqual(legacy.ponds.map((item) => item.id), ["old-pond"]);
   });
 });

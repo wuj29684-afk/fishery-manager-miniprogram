@@ -6,7 +6,7 @@ import { createJsonBackup, createRecordsCsv, parseJsonBackup } from "../../domai
 import { createId } from "../../domain/id";
 import { createLocalStateFromPullResult } from "../../domain/sync-state";
 import { getAccountSyncStatusText, pullAccountState, pushAccountState } from "../../services/account-sync-service";
-import { loadFarmState, saveFarmState, saveRecoveryPoint } from "../../storage/farm-store";
+import { hasExperienceExample, loadExperienceExample, loadFarmState, saveFarmState, saveRecoveryPoint } from "../../storage/farm-store";
 import type { FarmState } from "../../types";
 import "./index.scss";
 
@@ -100,6 +100,10 @@ export default function DataBackupPage() {
 
   async function handleBindLocalData() {
     if (!state || syncing || !(await ensureCloudSyncReady())) return;
+    if (hasExperienceExample(state)) {
+      await Taro.showToast({ title: "体验示例仅保存在本机，不能绑定到账号", icon: "none" });
+      return;
+    }
     const confirm = await Taro.showModal({
       title: "绑定本机数据到账号",
       content: `将使用当前微信账号身份，把本机 ${state.ponds.length} 个塘口、${state.records.length} 条记录同步到账号。`,
@@ -162,6 +166,24 @@ export default function DataBackupPage() {
     }
   }
 
+  async function handleOpenExperienceExample() {
+    if (!state) return;
+    if (state.ponds.length || state.records.length) {
+      await Taro.showModal({
+        title: "体验示例仅用于空白开始",
+        content: "当前本机已有经营数据。为避免示例塘口和记录混入真实数据，体验示例不会自动加入。",
+        showCancel: false,
+        confirmText: "我知道了"
+      });
+      return;
+    }
+    const next = await loadExperienceExample();
+    const pond = next.ponds[0];
+    if (!pond) return;
+    setState(next);
+    Taro.navigateTo({ url: `/pages/pond-detail/index?id=${pond.id}` });
+  }
+
   if (!state) {
     return (
       <View className="backup-page">
@@ -187,6 +209,15 @@ export default function DataBackupPage() {
           <Text className="summary-label">记录</Text>
           <Text className="summary-value">{state.records.length} 条</Text>
         </View>
+      </View>
+
+      <View className="action-section experience-section">
+        <Text className="section-title">体验示例</Text>
+        <Text className="hint">想先熟悉日常记录、预警和经营数据的呈现方式，可打开示例对虾塘查看。</Text>
+        <View className="copy-button" onClick={handleOpenExperienceExample}>
+          打开体验示例
+        </View>
+        <Text className="hint">仅在本机没有塘口和记录时载入，不会覆盖或混入已有经营数据。</Text>
       </View>
 
       <View className="sync-section">

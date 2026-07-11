@@ -14,6 +14,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const REQUIRED_COLLECTIONS = ["ponds", "records", "sync_revisions"];
 const PAGE_SIZE = 100;
 const MAX_ITEMS = 5000;
+const CURRENT_DATA_EPOCH = 2;
 
 function stripOwner(item) {
   const { ownerUserId, ...rest } = item || {};
@@ -67,18 +68,19 @@ function normalizePayload(payload = {}) {
   };
 }
 
-const revisionId = (openid) => openid + "_revision";
-const pondDocId = (openid, id) => openid + "_" + id;
-const recordDocId = (openid, id) => openid + "_" + id;
+const revisionId = (openid, dataEpoch) => dataEpoch === null ? openid + "_revision" : openid + "_revision_v" + dataEpoch;
+const pondDocId = (openid, id, dataEpoch) => dataEpoch === null ? openid + "_" + id : openid + "_v" + dataEpoch + "_" + id;
+const recordDocId = (openid, id, dataEpoch) => dataEpoch === null ? openid + "_" + id : openid + "_v" + dataEpoch + "_" + id;
 
 function missingError(error) {
   return /not.*exist|not.*found|does not exist|不存在|未找到/i.test(String(error && (error.errMsg || error.message || error)));
 }
 
-async function pullAll(db, collectionName, openid, orderField) {
+async function pullAll(db, collectionName, openid, orderField, dataEpoch = null) {
   const data = [];
   for (let offset = 0; offset < MAX_ITEMS; offset += PAGE_SIZE) {
-    let query = db.collection(collectionName).where({ _openid: openid }).orderBy(orderField, "desc").skip(offset).limit(PAGE_SIZE);
+    const scope = dataEpoch === null ? { _openid: openid } : { _openid: openid, dataEpoch };
+    let query = db.collection(collectionName).where(scope).orderBy(orderField, "desc").skip(offset).limit(PAGE_SIZE);
     const result = await query.get().catch((error) => {
       if (missingError(error)) return { data: [] };
       throw error;
@@ -89,16 +91,16 @@ async function pullAll(db, collectionName, openid, orderField) {
   return data;
 }
 
-async function getRevision(db, openid) {
-  const result = await db.collection("sync_revisions").doc(revisionId(openid)).get().catch(() => ({ data: null }));
+async function getRevision(db, openid, dataEpoch = CURRENT_DATA_EPOCH) {
+  const result = await db.collection("sync_revisions").doc(revisionId(openid, dataEpoch)).get().catch(() => ({ data: null }));
   return Number(result.data && result.data.revision || 0);
 }
 
-async function pullOwnedState(db, openid) {
+async function pullOwnedState(db, openid, dataEpoch = CURRENT_DATA_EPOCH) {
   const [serverRevision, pondDocs, recordDocs] = await Promise.all([
-    getRevision(db, openid),
-    pullAll(db, "ponds", openid, "updatedAt"),
-    pullAll(db, "records", openid, "updatedAt")
+    getRevision(db, openid, dataEpoch),
+    pullAll(db, "ponds", openid, "updatedAt", dataEpoch),
+    pullAll(db, "records", openid, "updatedAt", dataEpoch)
   ]);
   const ponds = pondDocs.map((item) => item.payload);
   const records = recordDocs.map((item) => item.payload);
@@ -134,14 +136,15 @@ async function setCompatibleDoc(collection, id, data, legacy) {
 
 async function pushOwnedState(db, openid, rawPayload) {
   const payload = normalizePayload(rawPayload);
-  const currentRevision = await getRevision(db, openid);
+  const dataEpoch = payload.protocolVersion === 2 ? CURRENT_DATA_EPOCH : null;
+  const currentRevision = await getRevision(db, openid, dataEpoch);
   if (payload.protocolVersion === 2 && !payload.force && payload.baseRevision !== currentRevision) {
-    const current = await pullOwnedState(db, openid);
+    const current = await pullOwnedState(db, openid, dataEpoch);
     return { ...current, conflict: true };
   }
 
   const pushedPondIds = new Set(payload.ponds.map((pond) => pond.id));
-  const existingPonds = await pullAll(db, "ponds", openid, "updatedAt");
+  const existingPonds = await pullAll(db, "ponds", openid, "updatedAt", dataEpoch);
   const ownedPondIds = new Set(existingPonds.map((item) => item.pondId));
   for (const pond of payload.ponds) {
     if (!pond.id || !pond.name || !pond.species) throw new Error("invalid pond");
@@ -155,30 +158,31 @@ async function pushOwnedState(db, openid, rawPayload) {
   const legacy = payload.protocolVersion === 1;
   await Promise.all([
     ...payload.ponds.map((pond) =>
-      setCompatibleDoc(db.collection("ponds"), pondDocId(openid, pond.id), {
-        _openid: openid, pondId: pond.id, payload: pond, updatedAt: now
+      setCompatibleDoc(db.collection("ponds"), pondDocId(openid, pond.id, dataEpoch), {
+        _openid: openid, ...(dataEpoch === null ? {} : { dataEpoch }), pondId: pond.id, payload: pond, updatedAt: now
       }, legacy)
     ),
     ...payload.records.map((record) =>
-      setCompatibleDoc(db.collection("records"), recordDocId(openid, record.id), {
-        _openid: openid, recordId: record.id, pondId: record.pondId, payload: record,
+      setCompatibleDoc(db.collection("records"), recordDocId(openid, record.id, dataEpoch), {
+        _openid: openid, ...(dataEpoch === null ? {} : { dataEpoch }), recordId: record.id, pondId: record.pondId, payload: record,
         createdAt: record.createdAt ? new Date(record.createdAt) : now, updatedAt: now
       }, legacy)
     ),
-    ...payload.deletedRecordIds.map((id) => removeDoc(db.collection("records"), recordDocId(openid, id))),
-    ...payload.deletedPondIds.map((id) => removeDoc(db.collection("ponds"), pondDocId(openid, id)))
+    ...payload.deletedRecordIds.map((id) => removeDoc(db.collection("records"), recordDocId(openid, id, dataEpoch))),
+    ...payload.deletedPondIds.map((id) => removeDoc(db.collection("ponds"), pondDocId(openid, id, dataEpoch)))
   ]);
 
-  await db.collection("sync_revisions").doc(revisionId(openid)).set({
+  await db.collection("sync_revisions").doc(revisionId(openid, dataEpoch)).set({
     data: {
       _openid: openid,
+      ...(dataEpoch === null ? {} : { dataEpoch }),
       revision: currentRevision + 1,
       deviceId: payload.deviceId,
       schemaVersion: payload.schemaVersion,
       updatedAt: now
     }
   });
-  return pullOwnedState(db, openid);
+  return pullOwnedState(db, openid, dataEpoch);
 }
 
 async function main(event, _context, deps = {}) {
@@ -190,9 +194,9 @@ async function main(event, _context, deps = {}) {
     await ensureCollections(db);
     return pushOwnedState(db, openid, event.payload);
   }
-  if (event.action === "pull") return pullOwnedState(db, openid);
+  if (event.action === "pull") return pullOwnedState(db, openid, event.protocolVersion === 2 ? CURRENT_DATA_EPOCH : null);
   throw new Error("unsupported action");
 }
 
 exports.main = main;
-exports._test = { checksum, ensureCollections, normalizePayload, pullAll, pullOwnedState, pushOwnedState, main };
+exports._test = { checksum, ensureCollections, normalizePayload, pullAll, pullOwnedState, pushOwnedState, main, CURRENT_DATA_EPOCH };
