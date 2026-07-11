@@ -1,133 +1,109 @@
 .login-page {
   min-height: 100vh;
-  padding: 56px 28px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 36px 80px;
   background:
-    radial-gradient(circle at 20% 8%, rgba(255, 222, 166, 0.34), transparent 34%),
-    linear-gradient(180deg, #eef7ef, #f7fbf7 46%, #edf5ef);
+    radial-gradient(ellipse at 50% 0%, rgba(15, 77, 31, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 85% 20%, rgba(45, 121, 82, 0.05) 0%, transparent 50%),
+    linear-gradient(180deg, #f0f7f2 0%, #f7faf6 40%, #edf5ef 100%);
 }
 
-.login-hero {
-  margin-bottom: 34px;
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 64px;
 }
 
-.eyebrow,
-.title,
-.subtitle,
-.status-label,
-.status-value,
-.hint,
-.trust-item {
-  display: block;
+.login-icon {
+  font-size: 80px;
+  margin-bottom: 28px;
 }
 
-.eyebrow {
-  color: #2d7952;
-  font-size: 26px;
+.login-name {
+  color: #0f4d1f;
+  font-size: 52px;
   font-weight: 900;
-  margin-bottom: 18px;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
 }
 
-.title {
-  color: #073f36;
-  font-size: 54px;
-  font-weight: 900;
-  line-height: 1.16;
-  margin-bottom: 18px;
+.login-tagline {
+  color: #5b8a6f;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: 1px;
 }
 
-.subtitle,
-.hint {
-  color: #5f7068;
-  font-size: 26px;
-  line-height: 1.5;
+.login-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 56px;
 }
 
-.login-panel {
-  padding: 28px;
-  border: 1px solid #d9e8df;
-  border-radius: 26px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 18px 42px rgba(35, 83, 58, 0.1);
-}
-
-.status-row {
+.login-primary {
+  width: 100%;
+  max-width: 520px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 20px 0;
-  border-bottom: 1px solid #e3eee7;
+  justify-content: center;
+  gap: 16px;
+  padding: 28px 32px;
+  background: linear-gradient(135deg, #0f4d1f 0%, #1a6b32 100%);
+  border-radius: 20px;
+  box-shadow: 0 12px 36px rgba(15, 77, 31, 0.28);
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.status-row:first-child {
-  padding-top: 0;
+.login-primary:active {
+  transform: scale(0.975);
+  box-shadow: 0 6px 20px rgba(15, 77, 31, 0.2);
 }
 
-.status-label {
-  color: #738179;
-  font-size: 24px;
+.login-primary.login-busy {
+  opacity: 0.7;
+  transform: none;
+  box-shadow: 0 6px 20px rgba(15, 77, 31, 0.16);
+}
+
+.login-primary-icon {
+  font-size: 32px;
+}
+
+.login-primary-text {
+  color: #ffffff;
+  font-size: 32px;
   font-weight: 800;
+  letter-spacing: 1px;
 }
 
-.status-value {
-  color: #143f35;
+.login-skip {
+  color: #6b8876;
   font-size: 26px;
-  font-weight: 900;
-  text-align: right;
+  font-weight: 600;
+  padding: 12px 20px;
 }
 
-.primary-button,
-.bind-button,
-.secondary-button {
-  margin-top: 22px;
-  padding: 24px;
-  border-radius: 16px;
-  font-size: 29px;
-  font-weight: 900;
-  text-align: center;
-}
-
-.primary-button {
-  border: 1px solid #0f4d1f;
-  background: #0f4d1f;
-  color: #ffffff;
-}
-
-.primary-button.disabled,
-.bind-button.disabled {
-  border-color: #b8cfbb;
-  background: #b8cfbb;
-  color: #ffffff;
-}
-
-.bind-button {
-  border: 1px solid #2f7d57;
-  background: #e8f4eb;
-  color: #0f4d1f;
-}
-
-.secondary-button {
-  border: 1px solid #c8dacd;
-  background: #ffffff;
-  color: #0f4d1f;
-}
-
-.hint {
-  margin-top: 18px;
-}
-
-.trust-list {
-  display: grid;
+.login-footnotes {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
-  margin-top: 28px;
+  padding: 28px 30px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid #dce8df;
 }
 
-.trust-item {
-  padding: 20px 22px;
-  border: 1px solid #dce8dc;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.78);
-  color: #405247;
+.login-footnote {
+  color: #7b9683;
   font-size: 24px;
-  line-height: 1.45;
+  line-height: 1.55;
 }

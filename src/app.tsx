@@ -14,14 +14,13 @@ function initCloudBase() {
     return;
   }
 
-  cloudInitialized = true;
-  setTimeout(() => {
-    try {
-      wx.cloud?.init({ env: CLOUDBASE_ENV_ID, traceUser: true });
-    } catch (error) {
-      console.warn("CloudBase init failed; local data remains available.", error);
-    }
-  }, 0);
+  try {
+    wx.cloud.init({ env: CLOUDBASE_ENV_ID, traceUser: true });
+  } catch (error) {
+    console.warn("CloudBase init failed; account sync will report the retryable error when used.", error);
+  } finally {
+    cloudInitialized = true;
+  }
 }
 
 function App(props: { children: JSX.Element }) {

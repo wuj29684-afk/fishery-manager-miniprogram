@@ -1,15 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Taro, { useDidShow } from "@tarojs/taro";
 import { Input, Picker, Text, View } from "@tarojs/components";
-import { isCloudSyncConfigured } from "../../config/api";
 import { shortcuts } from "../../data/seed";
 import { formatArea, formatMoney, todayString } from "../../domain/format";
 import { getCultureDays, getPondSummaries, getRecentRecords, getRecordTitle } from "../../domain/operations";
 import { evaluatePondHealth } from "../../domain/pond-health";
 import { buildWeeklyReport } from "../../domain/weekly-report";
-import { createLocalStateFromPullResult } from "../../domain/sync-state";
-import { pullAccountState } from "../../services/account-sync-service";
-import { FarmDataError, loadFarmState, saveFarmState, saveRecoveryPoint, setSelectedPond } from "../../storage/farm-store";
+import { FarmDataError, loadFarmState, setSelectedPond } from "../../storage/farm-store";
 import type { FarmState, Pond, RecordType } from "../../types";
 import "./index.scss";
 import "./index-v2.scss";
@@ -27,7 +24,6 @@ export default function IndexPage() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PondStatusFilter>("all");
   const [weeklyOpen, setWeeklyOpen] = useState(false);
-  const cloudChecked = useRef(false);
   const today = todayString();
 
   async function refresh() {
@@ -36,32 +32,6 @@ export default function IndexPage() {
   }
   useEffect(() => { refresh(); }, []);
   useDidShow(() => { refresh(); });
-
-  useEffect(() => {
-    if (!state || state.ponds.length || state.records.length || !isCloudSyncConfigured() || cloudChecked.current) return;
-    cloudChecked.current = true;
-    let cancelled = false;
-    async function checkBackup() {
-      setState((current) => current ? { ...current, syncMeta: { ...current.syncMeta, status: "checking", message: "正在检查账号备份" } } : current);
-      try {
-        const pulled = await pullAccountState();
-        if (cancelled || (!pulled.ponds.length && !pulled.records.length)) {
-          setState((current) => current ? { ...current, syncMeta: { ...current.syncMeta, status: "local", message: "本机数据" } } : current);
-          return;
-        }
-        const confirm = await Taro.showModal({ title: "发现账号备份", content: "云端有 " + pulled.ponds.length + " 个塘口、" + pulled.records.length + " 条记录，是否恢复？", confirmText: "恢复" });
-        if (!confirm.confirm || cancelled) return;
-        const local = await loadFarmState();
-        saveRecoveryPoint(local);
-        saveFarmState(createLocalStateFromPullResult(pulled, local));
-        await refresh();
-      } catch {
-        setState((current) => current ? { ...current, syncMeta: { ...current.syncMeta, status: "error", message: "账号备份检查失败" } } : current);
-      }
-    }
-    checkBackup();
-    return () => { cancelled = true; };
-  }, [state?.ponds.length, state?.records.length]);
 
   const model = useMemo(() => {
     if (!state) return null;
