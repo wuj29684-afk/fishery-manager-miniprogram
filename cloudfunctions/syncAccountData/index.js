@@ -1,176 +1,198 @@
 let cloud;
-
 try {
   cloud = require("wx-server-sdk");
 } catch (_error) {
   cloud = {
     DYNAMIC_CURRENT_ENV: "test",
     init() {},
-    database() {
-      throw new Error("wx-server-sdk is required in CloudBase runtime");
-    },
-    getWXContext() {
-      return {};
-    }
+    database() { throw new Error("wx-server-sdk is required in CloudBase runtime"); },
+    getWXContext() { return {}; }
   };
 }
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
-
 const REQUIRED_COLLECTIONS = ["ponds", "records", "sync_revisions"];
+const PAGE_SIZE = 100;
+const MAX_ITEMS = 5000;
 
 function stripOwner(item) {
   const { ownerUserId, ...rest } = item || {};
   return rest;
 }
 
-async function ensureCollections(db) {
-  if (typeof db.createCollection !== "function") {
-    return;
+function checksum(ponds, records) {
+  const source = [...ponds, ...records]
+    .map((item) => item.id + ":" + (item.updatedAt || ""))
+    .sort()
+    .join("|");
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
   }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
 
+async function ensureCollections(db) {
+  if (typeof db.createCollection !== "function") return;
   await Promise.all(
     REQUIRED_COLLECTIONS.map((name) =>
       db.createCollection(name).catch((error) => {
         const message = String(error && (error.errMsg || error.message || error));
-        if (/exist|already|duplicate/i.test(message)) {
-          return;
-        }
-        throw error;
+        if (!/exist|already|duplicate/i.test(message)) throw error;
       })
     )
   );
 }
 
 function normalizePayload(payload = {}) {
+  const ponds = Array.isArray(payload.ponds) ? payload.ponds.map(stripOwner) : [];
+  const records = Array.isArray(payload.records) ? payload.records.map(stripOwner) : [];
+  if (ponds.length > MAX_ITEMS || records.length > MAX_ITEMS) throw new Error("sync payload too large");
+  if (payload.protocolVersion === 2) {
+    if (payload.schemaVersion !== 2) throw new Error("unsupported schema version");
+    if (payload.pondCount !== ponds.length || payload.recordCount !== records.length) throw new Error("sync count mismatch");
+    if (payload.checksum !== checksum(ponds, records)) throw new Error("sync checksum mismatch");
+  }
   return {
+    protocolVersion: payload.protocolVersion === 2 ? 2 : 1,
+    schemaVersion: payload.schemaVersion === 2 ? 2 : 1,
     deviceId: String(payload.deviceId || ""),
-    lastSyncedAt: payload.lastSyncedAt,
-    ponds: Array.isArray(payload.ponds) ? payload.ponds.map(stripOwner) : [],
-    records: Array.isArray(payload.records) ? payload.records.map(stripOwner) : []
+    baseRevision: Number(payload.baseRevision || 0),
+    force: payload.force === true,
+    ponds,
+    records,
+    deletedPondIds: Array.isArray(payload.deletedPondIds) ? payload.deletedPondIds.map(String) : [],
+    deletedRecordIds: Array.isArray(payload.deletedRecordIds) ? payload.deletedRecordIds.map(String) : []
   };
 }
 
-function getRevisionDocId(openid) {
-  return `${openid}_revision`;
+const revisionId = (openid) => openid + "_revision";
+const pondDocId = (openid, id) => openid + "_" + id;
+const recordDocId = (openid, id) => openid + "_" + id;
+
+function missingError(error) {
+  return /not.*exist|not.*found|does not exist|不存在|未找到/i.test(String(error && (error.errMsg || error.message || error)));
 }
 
-function getPondDocId(openid, pondId) {
-  return `${openid}_${pondId}`;
+async function pullAll(db, collectionName, openid, orderField) {
+  const data = [];
+  for (let offset = 0; offset < MAX_ITEMS; offset += PAGE_SIZE) {
+    let query = db.collection(collectionName).where({ _openid: openid }).orderBy(orderField, "desc").skip(offset).limit(PAGE_SIZE);
+    const result = await query.get().catch((error) => {
+      if (missingError(error)) return { data: [] };
+      throw error;
+    });
+    data.push(...result.data);
+    if (result.data.length < PAGE_SIZE) break;
+  }
+  return data;
 }
 
-function getRecordDocId(openid, recordId) {
-  return `${openid}_${recordId}`;
-}
-
-function isMissingCollectionError(error) {
-  const message = String(error && (error.errMsg || error.message || error));
-  return /collection.*(not.*exist|not.*found)|not.*exist|does not exist|不存在|未找到/i.test(message);
-}
-
-async function getCollectionOrEmpty(query) {
-  return query.get().catch((error) => {
-    if (isMissingCollectionError(error)) {
-      return { data: [] };
-    }
-    throw error;
-  });
+async function getRevision(db, openid) {
+  const result = await db.collection("sync_revisions").doc(revisionId(openid)).get().catch(() => ({ data: null }));
+  return Number(result.data && result.data.revision || 0);
 }
 
 async function pullOwnedState(db, openid) {
-  const [revisionResult, pondResult, recordResult] = await Promise.all([
-    getCollectionOrEmpty(db.collection("sync_revisions").where({ _openid: openid }).limit(1)),
-    getCollectionOrEmpty(db.collection("ponds").where({ _openid: openid }).orderBy("updatedAt", "desc")),
-    getCollectionOrEmpty(db.collection("records").where({ _openid: openid }).orderBy("createdAt", "desc"))
+  const [serverRevision, pondDocs, recordDocs] = await Promise.all([
+    getRevision(db, openid),
+    pullAll(db, "ponds", openid, "updatedAt"),
+    pullAll(db, "records", openid, "updatedAt")
   ]);
-
+  const ponds = pondDocs.map((item) => item.payload);
+  const records = recordDocs.map((item) => item.payload);
   return {
-    serverRevision: revisionResult.data[0]?.revision || 0,
-    ponds: pondResult.data.map((item) => item.payload),
-    records: recordResult.data.map((item) => item.payload)
+    protocolVersion: 2,
+    schemaVersion: 2,
+    serverRevision,
+    syncedAt: new Date().toISOString(),
+    ponds,
+    records,
+    pondCount: ponds.length,
+    recordCount: records.length,
+    checksum: checksum(ponds, records)
   };
+}
+
+async function removeDoc(collection, id) {
+  await collection.doc(id).remove().catch((error) => {
+    if (!missingError(error)) throw error;
+  });
+}
+
+async function setCompatibleDoc(collection, id, data, legacy) {
+  if (!legacy) return collection.doc(id).set({ data });
+  const existing = await collection.doc(id).get().catch(() => ({ data: null }));
+  return collection.doc(id).set({
+    data: {
+      ...data,
+      payload: { ...(existing.data && existing.data.payload || {}), ...data.payload }
+    }
+  });
 }
 
 async function pushOwnedState(db, openid, rawPayload) {
   const payload = normalizePayload(rawPayload);
-  const pushedPondIds = new Set(payload.ponds.map((pond) => pond.id));
-  const existingPonds = await db.collection("ponds").where({ _openid: openid }).get();
-  const ownedPondIds = new Set(existingPonds.data.map((item) => item.pondId));
+  const currentRevision = await getRevision(db, openid);
+  if (payload.protocolVersion === 2 && !payload.force && payload.baseRevision !== currentRevision) {
+    const current = await pullOwnedState(db, openid);
+    return { ...current, conflict: true };
+  }
 
+  const pushedPondIds = new Set(payload.ponds.map((pond) => pond.id));
+  const existingPonds = await pullAll(db, "ponds", openid, "updatedAt");
+  const ownedPondIds = new Set(existingPonds.map((item) => item.pondId));
+  for (const pond of payload.ponds) {
+    if (!pond.id || !pond.name || !pond.species) throw new Error("invalid pond");
+  }
   for (const record of payload.records) {
-    if (!pushedPondIds.has(record.pondId) && !ownedPondIds.has(record.pondId)) {
-      const error = new Error("pond not found");
-      error.statusCode = 400;
-      throw error;
-    }
+    if (!record.id || !record.pondId || !record.type || !record.date) throw new Error("invalid record");
+    if (!pushedPondIds.has(record.pondId) && !ownedPondIds.has(record.pondId)) throw new Error("pond not found");
   }
 
   const now = db.serverDate();
+  const legacy = payload.protocolVersion === 1;
   await Promise.all([
     ...payload.ponds.map((pond) =>
-      db.collection("ponds").doc(getPondDocId(openid, pond.id)).set({
-        data: {
-          _openid: openid,
-          pondId: pond.id,
-          payload: pond,
-          updatedAt: now
-        }
-      })
+      setCompatibleDoc(db.collection("ponds"), pondDocId(openid, pond.id), {
+        _openid: openid, pondId: pond.id, payload: pond, updatedAt: now
+      }, legacy)
     ),
     ...payload.records.map((record) =>
-      db.collection("records").doc(getRecordDocId(openid, record.id)).set({
-        data: {
-          _openid: openid,
-          recordId: record.id,
-          pondId: record.pondId,
-          payload: record,
-          createdAt: record.createdAt ? new Date(record.createdAt) : now,
-          updatedAt: now
-        }
-      })
-    )
+      setCompatibleDoc(db.collection("records"), recordDocId(openid, record.id), {
+        _openid: openid, recordId: record.id, pondId: record.pondId, payload: record,
+        createdAt: record.createdAt ? new Date(record.createdAt) : now, updatedAt: now
+      }, legacy)
+    ),
+    ...payload.deletedRecordIds.map((id) => removeDoc(db.collection("records"), recordDocId(openid, id))),
+    ...payload.deletedPondIds.map((id) => removeDoc(db.collection("ponds"), pondDocId(openid, id)))
   ]);
 
-  const revisionDoc = db.collection("sync_revisions").doc(getRevisionDocId(openid));
-  const currentRevision = await revisionDoc.get().catch(() => ({ data: null }));
-  await revisionDoc.set({
+  await db.collection("sync_revisions").doc(revisionId(openid)).set({
     data: {
       _openid: openid,
-      revision: (currentRevision.data?.revision || 0) + 1,
+      revision: currentRevision + 1,
+      deviceId: payload.deviceId,
+      schemaVersion: payload.schemaVersion,
       updatedAt: now
     }
   });
-
   return pullOwnedState(db, openid);
 }
 
 async function main(event, _context, deps = {}) {
   const wxContext = deps.wxContext || cloud.getWXContext();
   const openid = wxContext.OPENID;
-  if (!openid) {
-    throw new Error("missing openid");
-  }
-
+  if (!openid) throw new Error("missing openid");
   const db = deps.db || cloud.database();
   if (event.action === "push") {
     await ensureCollections(db);
     return pushOwnedState(db, openid, event.payload);
   }
-  if (event.action === "pull") {
-    return pullOwnedState(db, openid);
-  }
-
-  const error = new Error("unsupported action");
-  error.statusCode = 400;
-  throw error;
+  if (event.action === "pull") return pullOwnedState(db, openid);
+  throw new Error("unsupported action");
 }
 
 exports.main = main;
-exports._test = {
-  ensureCollections,
-  isMissingCollectionError,
-  normalizePayload,
-  pullOwnedState,
-  pushOwnedState,
-  main
-};
+exports._test = { checksum, ensureCollections, normalizePayload, pullAll, pullOwnedState, pushOwnedState, main };

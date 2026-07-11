@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import Taro from "@tarojs/taro";
-import { Input, Text, View } from "@tarojs/components";
-import { validatePondInput } from "../../domain/validation";
+import { Input, Picker, Text, View } from "@tarojs/components";
+import { alertProfiles, inferAlertProfile } from "../../domain/alert-profiles";
+import { parseOptionalNumber, validatePondInput } from "../../domain/validation";
 import { addPond, loadFarmState, updatePond } from "../../storage/farm-store";
+import type { AlertProfileId } from "../../types";
 import "./index.scss";
 
-function getRoutePondId(): string {
-  return Taro.getCurrentInstance().router?.params?.pondId ?? "";
-}
+const profileIds: AlertProfileId[] = ["shrimp", "tilapia", "general"];
+const getPondId = () => Taro.getCurrentInstance().router?.params?.pondId || "";
 
 export default function PondFormPage() {
   const [pondId, setPondId] = useState("");
@@ -15,99 +16,91 @@ export default function PondFormPage() {
   const [species, setSpecies] = useState("");
   const [location, setLocation] = useState("");
   const [areaMu, setAreaMu] = useState("");
-  const [day, setDay] = useState("");
+  const [stockingDate, setStockingDate] = useState("");
+  const [stockingQuantity, setStockingQuantity] = useState("");
+  const [initialSize, setInitialSize] = useState("");
+  const [cultureStage, setCultureStage] = useState("");
+  const [targetHarvestDate, setTargetHarvestDate] = useState("");
+  const [alertProfileId, setAlertProfileId] = useState<AlertProfileId>("general");
+  const [phMin, setPhMin] = useState("");
+  const [phMax, setPhMax] = useState("");
+  const [oxygenMin, setOxygenMin] = useState("");
+  const [ammoniaMax, setAmmoniaMax] = useState("");
+  const [nitriteMax, setNitriteMax] = useState("");
   const [saving, setSaving] = useState(false);
-  const isEditing = Boolean(pondId);
 
   useEffect(() => {
     async function init() {
-      const routePondId = getRoutePondId();
-      if (!routePondId) return;
-
-      const state = await loadFarmState();
-      const pond = state.ponds.find((item) => item.id === routePondId);
-      if (!pond) {
-        Taro.showToast({ title: "未找到塘口", icon: "none" });
-        return;
-      }
-
-      setPondId(pond.id);
-      setName(pond.name);
-      setSpecies(pond.species);
-      setLocation(pond.location);
-      setAreaMu(String(pond.areaMu));
-      setDay(String(pond.day));
-      Taro.setNavigationBarTitle({ title: "编辑塘口" });
+      const id = getPondId();
+      if (!id) return;
+      const pond = (await loadFarmState()).ponds.find((item) => item.id === id);
+      if (!pond) return;
+      setPondId(id); setName(pond.name); setSpecies(pond.species); setLocation(pond.location); setAreaMu(String(pond.areaMu));
+      setStockingDate(pond.stockingDate || ""); setStockingQuantity(pond.stockingQuantity ? String(pond.stockingQuantity) : "");
+      setInitialSize(pond.initialSize || ""); setCultureStage(pond.cultureStage || ""); setTargetHarvestDate(pond.targetHarvestDate || "");
+      setAlertProfileId(pond.alertProfileId); Taro.setNavigationBarTitle({ title: "编辑塘口" });
+      setPhMin(pond.customThresholds?.phMin === undefined ? "" : String(pond.customThresholds.phMin));
+      setPhMax(pond.customThresholds?.phMax === undefined ? "" : String(pond.customThresholds.phMax));
+      setOxygenMin(pond.customThresholds?.dissolvedOxygenMin === undefined ? "" : String(pond.customThresholds.dissolvedOxygenMin));
+      setAmmoniaMax(pond.customThresholds?.ammoniaNitrogenMax === undefined ? "" : String(pond.customThresholds.ammoniaNitrogenMax));
+      setNitriteMax(pond.customThresholds?.nitriteMax === undefined ? "" : String(pond.customThresholds.nitriteMax));
     }
     init();
   }, []);
 
-  async function handleSave() {
+  async function save() {
     if (saving) return;
-
-    const input = {
-      name,
-      species,
-      location,
-      areaMu: Number(areaMu),
-      day: Number(day)
+    const quantity = parseOptionalNumber(stockingQuantity, "放苗数量");
+    const thresholdResults = [
+      parseOptionalNumber(phMin, "pH 下限", 0, 14), parseOptionalNumber(phMax, "pH 上限", 0, 14),
+      parseOptionalNumber(oxygenMin, "溶氧下限"), parseOptionalNumber(ammoniaMax, "氨氮上限"), parseOptionalNumber(nitriteMax, "亚硝酸盐上限")
+    ];
+    const thresholdError = thresholdResults.find((item) => !item.valid);
+    const customThresholds = {
+      ...(Number.isNaN(thresholdResults[0].value) ? {} : { phMin: thresholdResults[0].value }),
+      ...(Number.isNaN(thresholdResults[1].value) ? {} : { phMax: thresholdResults[1].value }),
+      ...(Number.isNaN(thresholdResults[2].value) ? {} : { dissolvedOxygenMin: thresholdResults[2].value }),
+      ...(Number.isNaN(thresholdResults[3].value) ? {} : { ammoniaNitrogenMax: thresholdResults[3].value }),
+      ...(Number.isNaN(thresholdResults[4].value) ? {} : { nitriteMax: thresholdResults[4].value })
     };
-    const result = validatePondInput(input);
-    if (!result.valid) {
-      Taro.showToast({ title: result.message, icon: "none" });
-      return;
-    }
-
+    const input = {
+      name: name.trim(), species: species.trim(), location: location.trim(), areaMu: Number(areaMu),
+      stockingDate: stockingDate || undefined,
+      stockingQuantity: Number.isNaN(quantity.value) ? undefined : quantity.value,
+      initialSize: initialSize.trim() || undefined,
+      cultureStage: cultureStage.trim() || undefined,
+      alertProfileId,
+      customThresholds: Object.keys(customThresholds).length ? customThresholds : undefined,
+      targetHarvestDate: targetHarvestDate || undefined,
+      legacyStockingDays: undefined
+    };
+    const validation = validatePondInput(input);
+    if (!validation.valid || !quantity.valid || thresholdError) { Taro.showToast({ title: !validation.valid ? validation.message : !quantity.valid ? quantity.message : thresholdError?.message || "预警范围不正确", icon: "none" }); return; }
     setSaving(true);
     try {
-      if (isEditing) {
-        await updatePond(pondId, input);
-      } else {
-        await addPond(input);
-      }
-      await Taro.showToast({ title: "保存成功", icon: "success" });
-      Taro.navigateBack();
-    } finally {
-      setSaving(false);
-    }
+      if (pondId) await updatePond(pondId, input); else await addPond(input);
+      await Taro.showToast({ title: "保存成功", icon: "success" }); Taro.navigateBack();
+    } finally { setSaving(false); }
   }
 
-  return (
-    <View className="form-page">
-      <View className="form-head">
-        <Text className="title">{isEditing ? "编辑塘口" : "新增塘口"}</Text>
-        <Text className="subtitle">把养殖塘口资料保存在本机，后续记录会自动汇总到驾驶舱。</Text>
-      </View>
+  return <View className="form-page">
+    <View className="form-head"><Text className="title">{pondId ? "编辑塘口" : "新增塘口"}</Text><Text className="subtitle">建立养殖批次后，养殖天数和经营指标会自动计算。</Text></View>
+    <Field label="塘口名称" value={name} placeholder="例如 3号高位池" onInput={setName} />
+    <Field label="养殖品种" value={species} placeholder="例如 南美白对虾" onInput={(value) => { setSpecies(value); if (!pondId) setAlertProfileId(inferAlertProfile(value)); }} />
+    <Field label="所在位置" value={location} placeholder="例如 广东湛江 麻章区" onInput={setLocation} />
+    <View className="field-row"><Field label="面积（亩）" value={areaMu} placeholder="8.5" type="digit" onInput={setAreaMu} /><Field label="放苗日期" value={stockingDate} placeholder="YYYY-MM-DD" onInput={setStockingDate} /></View>
+    <View className="field-row"><Field label="放苗数量（尾）" value={stockingQuantity} placeholder="50000" type="number" onInput={setStockingQuantity} /><Field label="初始规格（克/尾）" value={initialSize} placeholder="0.02" onInput={setInitialSize} /></View>
+    <View className="field-row"><Field label="养殖阶段" value={cultureStage} placeholder="苗期/中期/后期" onInput={setCultureStage} /><Field label="目标出塘日期" value={targetHarvestDate} placeholder="YYYY-MM-DD" onInput={setTargetHarvestDate} /></View>
+    <Picker mode="selector" range={profileIds.map((id) => alertProfiles[id].name)} value={profileIds.indexOf(alertProfileId)} onChange={(event) => setAlertProfileId(profileIds[Number(event.detail.value)])}><View className="pond-picker"><Text className="label">水质预警模板</Text><Text className="picker-value">{alertProfiles[alertProfileId].name}</Text></View></Picker>
+    <Text className="label">自定义参考范围（可选）</Text>
+    <View className="field-row"><Field label="pH 下限" value={phMin} placeholder="使用模板" type="digit" onInput={setPhMin} /><Field label="pH 上限" value={phMax} placeholder="使用模板" type="digit" onInput={setPhMax} /></View>
+    <View className="field-row"><Field label="溶氧下限" value={oxygenMin} placeholder="使用模板" type="digit" onInput={setOxygenMin} /><Field label="氨氮上限" value={ammoniaMax} placeholder="使用模板" type="digit" onInput={setAmmoniaMax} /></View>
+    <Field label="亚硝酸盐上限" value={nitriteMax} placeholder="使用模板" type="digit" onInput={setNitriteMax} />
+    <Text className="hint">预警模板为养殖参考范围，可在后续数据设置中按塘口调整。</Text>
+    <Text className="save-button" onClick={save}>{saving ? "保存中..." : "保存塘口"}</Text>
+  </View>;
+}
 
-      <View className="field">
-        <Text className="label">塘口名称</Text>
-        <Input className="input" value={name} placeholder="例如 3号高位池" onInput={(event) => setName(event.detail.value)} />
-      </View>
-
-      <View className="field">
-        <Text className="label">养殖品种</Text>
-        <Input className="input" value={species} placeholder="例如 南美白对虾" onInput={(event) => setSpecies(event.detail.value)} />
-      </View>
-
-      <View className="field">
-        <Text className="label">所在位置</Text>
-        <Input className="input" value={location} placeholder="例如 广东湛江 麻章区" onInput={(event) => setLocation(event.detail.value)} />
-      </View>
-
-      <View className="field-row">
-        <View className="field compact">
-          <Text className="label">面积（亩）</Text>
-          <Input className="input" type="digit" value={areaMu} placeholder="8.5" onInput={(event) => setAreaMu(event.detail.value)} />
-        </View>
-        <View className="field compact">
-          <Text className="label">入塘天数</Text>
-          <Input className="input" type="number" value={day} placeholder="42" onInput={(event) => setDay(event.detail.value)} />
-        </View>
-      </View>
-
-      <Text className="save-button" onClick={handleSave}>
-        {saving ? "保存中..." : isEditing ? "保存修改" : "保存塘口"}
-      </Text>
-    </View>
-  );
+function Field(props: { label: string; value: string; placeholder: string; type?: "text" | "number" | "digit"; onInput(value: string): void }) {
+  return <View className="field compact"><Text className="label">{props.label}</Text><Input className="input" type={props.type || "text"} value={props.value} placeholder={props.placeholder} onInput={(event) => props.onInput(event.detail.value)} /></View>;
 }

@@ -15,14 +15,14 @@ export function getAccountSyncStatusText(): string {
   return "暂未配置云同步服务，本版本不会发起网络或云同步请求。";
 }
 
-export async function pushAccountState(state: FarmState, deviceId: string): Promise<PushResult> {
+export async function pushAccountState(state: FarmState, deviceId: string, force = false): Promise<PushResult> {
   const mode = getAccountSyncMode();
   if (mode === "cloudbase") {
-    return pushOwnedStateWithCloudBase(state, deviceId);
+    return pushOwnedStateWithCloudBase(state, deviceId, force);
   }
   if (mode === "http") {
     const session = await loginWithServer(API_BASE_URL);
-    return pushOwnedState(API_BASE_URL, session.sessionToken, state, deviceId);
+    return pushOwnedState(API_BASE_URL, session.sessionToken, state, deviceId, force);
   }
   throw new Error("云同步服务未配置");
 }

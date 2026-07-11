@@ -10,8 +10,8 @@ const summaryCards = [
   },
   {
     label: "版本状态",
-    value: "0.2.4 正式版",
-    detail: "已完成备案、首屏账号进入、云同步体验验证并正式上线。"
+    value: "0.2.5 开发版",
+    detail: "正在升级启动体验、专业养殖记录、预警与可靠同步；尚未上传或发布。"
   },
   {
     label: "能力范围",
@@ -27,7 +27,7 @@ const summaryCards = [
 
 const featureItems = [
   "塘口创建、编辑、停用和详情查看。",
-  "投料、水质、用药、收获四类经营记录。",
+  "投料、水质、用药、收获、抽样、死亡、经营支出七类记录。",
   "记录编辑、删除和二次确认。",
   "首页塘口搜索、状态筛选和经营指标汇总。",
   "JSON 备份复制、JSON 导入恢复和 CSV 记录导出。"
@@ -108,7 +108,7 @@ export default function AboutDataPage() {
 
       <InfoSection title="线上版说明">
         <Text className="section-copy">
-          当前 0.2.4 版本已正式上线，支持本机优先记录和用户主动触发的微信云开发账号同步。
+          当前线上仍为 0.2.4；本机正在开发 0.2.5，尚未上传体验版或发布。
         </Text>
       </InfoSection>
 

@@ -6,7 +6,7 @@ import { createJsonBackup, createRecordsCsv, parseJsonBackup } from "../../domai
 import { createId } from "../../domain/id";
 import { createLocalStateFromPullResult } from "../../domain/sync-state";
 import { getAccountSyncStatusText, pullAccountState, pushAccountState } from "../../services/account-sync-service";
-import { loadFarmState, saveFarmState } from "../../storage/farm-store";
+import { loadFarmState, saveFarmState, saveRecoveryPoint } from "../../storage/farm-store";
 import type { FarmState } from "../../types";
 import "./index.scss";
 
@@ -110,7 +110,23 @@ export default function DataBackupPage() {
 
     setSyncing(true);
     try {
-      const result = await pushAccountState(state, getDeviceId());
+      let result = await pushAccountState(state, getDeviceId());
+      if (result.conflict) {
+        const choice = await Taro.showModal({
+          title: "发现数据冲突",
+          content: "账号数据已在其他设备更新。取消可保留云端并返回，继续将先保存本机恢复点，再用本机数据覆盖云端。",
+          confirmText: "覆盖云端",
+          confirmColor: "#c43d2b",
+          cancelText: "暂不处理"
+        });
+        if (!choice.confirm) return;
+        saveRecoveryPoint(state);
+        result = await pushAccountState(state, getDeviceId(), true);
+        if (result.conflict) throw new Error("账号数据仍在更新，请稍后重试");
+      }
+      const syncedState = createLocalStateFromPullResult(result, state);
+      saveFarmState(syncedState);
+      setState(syncedState);
       await Taro.showToast({ title: `已同步 ${result.ponds.length} 个塘口`, icon: "success" });
     } catch (error) {
       await Taro.showToast({ title: getErrorMessage(error), icon: "none" });
@@ -125,7 +141,8 @@ export default function DataBackupPage() {
     setSyncing(true);
     try {
       const result = await pullAccountState();
-      const localState = createLocalStateFromPullResult(result);
+      const current = await loadFarmState();
+      const localState = createLocalStateFromPullResult(result, current);
       const confirm = await Taro.showModal({
         title: "使用账号数据",
         content: `将用账号云端数据覆盖本机：${localState.ponds.length} 个塘口，${localState.records.length} 条记录。建议先复制 JSON 备份。`,
@@ -134,6 +151,7 @@ export default function DataBackupPage() {
       });
       if (!confirm.confirm) return;
 
+      saveRecoveryPoint(current);
       saveFarmState(localState);
       await refresh();
       await Taro.showToast({ title: "账号数据已恢复", icon: "success" });
@@ -156,7 +174,7 @@ export default function DataBackupPage() {
     <View className="backup-page">
       <View className="backup-head">
         <Text className="eyebrow">本地备份</Text>
-        <Text className="title">数据备份</Text>
+        <Text className="title">数据与设置</Text>
         <Text className="subtitle">导出和恢复默认只作用于本机本地存储；账号同步仅在配置云端服务后可用。</Text>
       </View>
 
@@ -183,6 +201,13 @@ export default function DataBackupPage() {
           使用账号数据
         </View>
         <Text className="hint">云同步按微信登录账号隔离塘口和记录；覆盖本机前会二次确认。</Text>
+      </View>
+
+      <View className="action-section">
+        <Text className="section-title">产品与数据说明</Text>
+        <View className="copy-button" onClick={() => Taro.navigateTo({ url: "/pages/about-data/index" })}>
+          查看功能范围与隐私边界
+        </View>
       </View>
 
       <View className="action-section">

@@ -1,6 +1,6 @@
 {
   "name": "@fishery-manager/miniprogram",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": true,
   "scripts": {
     "dev:weapp": "taro build --type weapp --watch",

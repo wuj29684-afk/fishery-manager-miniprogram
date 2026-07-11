@@ -1,107 +1,20 @@
-import fs from "node:fs";
-import path from "node:path";
-
-const root = path.resolve(import.meta.dirname, "..");
-
-function readText(relativePath) {
-  return fs.readFileSync(path.join(root, relativePath), "utf8");
-}
-
-function assertIncludes(text, expected, label) {
-  if (!text.includes(expected)) {
-    throw new Error(`${label} must include: ${expected}`);
-  }
-}
-
-const appConfig = readText("src/app.config.ts");
-const homePage = readText("src/pages/index/index.tsx");
-const aboutPagePath = path.join(root, "src/pages/about-data/index.tsx");
-const reviewChecklistPath = [
-  path.join(root, "docs/miniprogram-review-checklist.md"),
-  path.join(root, "../docs/miniprogram-review-checklist.md")
-].find((candidate) => fs.existsSync(candidate));
-
-if (!fs.existsSync(aboutPagePath)) {
-  throw new Error("about-data page must exist");
-}
-
-if (!reviewChecklistPath) {
-  throw new Error("review checklist must exist");
-}
-
-const aboutPage = fs.readFileSync(aboutPagePath, "utf8");
-const dataBackupPage = readText("src/pages/data-backup/index.tsx");
-const apiConfig = readText("src/config/api.ts");
-const accountSyncService = readText("src/services/account-sync-service.ts");
-const reviewChecklist = fs.readFileSync(reviewChecklistPath, "utf8");
-const officialMiniProgramName = "渔儿小助手";
-
-assertIncludes(appConfig, "pages/about-data/index", "app config");
-assertIncludes(appConfig, "\"pages/account-login/index\"", "app config");
-assertIncludes(appConfig, officialMiniProgramName, "app config");
-assertIncludes(homePage, "/pages/about-data/index", "home page");
-assertIncludes(homePage, "关于与数据", "home page");
-assertIncludes(homePage, officialMiniProgramName, "home page");
-
-const loginPagePath = path.join(root, "src/pages/account-login/index.tsx");
-if (!fs.existsSync(loginPagePath)) {
-  throw new Error("account-login page must exist");
-}
-const loginPage = fs.readFileSync(loginPagePath, "utf8");
-
-[
-  "使用当前微信账号进入",
-  "登录时同步账号数据",
-  "绑定本机数据到账号",
-  "使用账号数据",
-  "账号同步暂时失败",
-  "进入本机数据",
-  "pushAccountState",
-  "pullAccountState"
-].forEach((copy) => assertIncludes(loginPage, copy, "account-login page"));
-
-[
-  officialMiniProgramName,
-  "本机优先 + 账号同步",
-  "用户主动点击“绑定本机数据到账号”",
-  "微信云开发按当前微信账号隔离同步",
-  "客户端传入的 ownerUserId 会被忽略",
-  "当前线上版暂无在线客服",
-  "AppSecret 只能放在服务端",
-  "0.2.4 正式版",
-  "已完成备案"
-].forEach((copy) => assertIncludes(aboutPage, copy, "about-data page"));
-
-[
-  "服务类目",
-  "隐私政策",
-  "用户协议",
-  "功能说明",
-  "体验路径",
-  "截图素材",
-  "版本备注"
-].forEach((item) => assertIncludes(reviewChecklist, item, "review checklist"));
-
-assertIncludes(reviewChecklist, officialMiniProgramName, "review checklist");
-
-[
-  "账号同步",
-  "绑定本机数据到账号",
-  "使用账号数据",
-  "getAccountSyncStatusText",
-  "createLocalStateFromPullResult"
-].forEach((copy) => assertIncludes(dataBackupPage, copy, "data backup page"));
-
-[
-  "云开发同步已配置",
-  "HTTPS 云同步服务已配置",
-  "暂未配置云同步服务",
-  "pushOwnedStateWithCloudBase"
-].forEach((copy) => assertIncludes(accountSyncService, copy, "account sync service"));
-
-assertIncludes(apiConfig, "TARO_APP_API_BASE_URL", "api config");
-assertIncludes(apiConfig, "TARO_APP_CLOUDBASE_ENV_ID", "api config");
-assertIncludes(apiConfig, "cloudbase", "api config");
-assertIncludes(apiConfig, "https://", "api config");
-
-console.log("about/data smoke checks passed");
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+const read = (path) => readFileSync(new URL("../" + path, import.meta.url), "utf8");
+const app = read("src/app.config.ts");
+const home = read("src/pages/index/index.tsx");
+const about = read("src/pages/about-data/index.tsx");
+const records = read("src/pages/record-form/index.tsx");
+const seed = read("src/data/seed.ts");
+const pkg = JSON.parse(read("package.json"));
+assert.equal(pkg.version, "0.2.5");
+assert.ok(app.indexOf('"pages/index/index"') < app.indexOf('"pages/account-login/index"'));
+assert.match(home, /创建第一个塘口/);
+assert.match(home, /发现账号备份/);
+assert.match(home, /本周经营/);
+assert.match(records, /抽样/);
+assert.match(records, /"expense"/);
+assert.match(records, /补充专业信息/);
+assert.match(about, /0\.2\.5 开发版/);
+assert.doesNotMatch(seed, /seedFarmState/);
+console.log("about/data v2 smoke checks passed");

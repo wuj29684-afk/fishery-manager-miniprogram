@@ -1,5 +1,20 @@
-export type RecordType = "feed" | "water" | "drug" | "harvest";
+export type RecordType = "feed" | "water" | "drug" | "harvest" | "sampling" | "mortality" | "expense";
 export type PondStatus = "active" | "inactive";
+export type AlertProfileId = "shrimp" | "tilapia" | "general";
+export type AlertSeverity = "low" | "medium" | "high";
+export type SyncStatus = "local" | "checking" | "synced" | "conflict" | "error";
+
+export interface WaterThresholds {
+  phMin: number;
+  phMax: number;
+  dissolvedOxygenMin: number;
+  ammoniaNitrogenMax: number;
+  nitriteMax?: number;
+  temperatureMin?: number;
+  temperatureMax?: number;
+  salinityMin?: number;
+  salinityMax?: number;
+}
 
 export interface Pond {
   id: string;
@@ -7,8 +22,16 @@ export interface Pond {
   species: string;
   location: string;
   areaMu: number;
-  day: number;
   status: PondStatus;
+  stockingDate?: string;
+  stockingQuantity?: number;
+  initialSize?: string;
+  cultureStage?: string;
+  alertProfileId: AlertProfileId;
+  customThresholds?: Partial<WaterThresholds>;
+  targetHarvestDate?: string;
+  legacyStockingDays?: number;
+  needsStockingDate: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,12 +43,19 @@ export interface BaseFarmRecord {
   date: string;
   note: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface FeedRecord extends BaseFarmRecord {
   type: "feed";
   weightKg: number;
   unitPriceYuan: number;
+  feedName?: string;
+  feedBatch?: string;
+  meal?: string;
+  plannedWeightKg?: number;
+  appetite?: "good" | "normal" | "poor";
+  leftover?: string;
 }
 
 export interface WaterRecord extends BaseFarmRecord {
@@ -33,6 +63,12 @@ export interface WaterRecord extends BaseFarmRecord {
   ph: number;
   dissolvedOxygen: number;
   ammoniaNitrogen: number;
+  measuredAt?: string;
+  temperature?: number;
+  nitrite?: number;
+  salinity?: number;
+  transparencyCm?: number;
+  alkalinity?: number;
 }
 
 export interface DrugRecord extends BaseFarmRecord {
@@ -40,26 +76,84 @@ export interface DrugRecord extends BaseFarmRecord {
   drugName: string;
   dosage: string;
   withdrawalDays: number;
+  withdrawalEndDate: string;
+  reason?: string;
+  activeIngredient?: string;
+  method?: string;
+  operator?: string;
+  costYuan?: number;
 }
 
 export interface HarvestRecord extends BaseFarmRecord {
   type: "harvest";
   weightKg: number;
   unitPriceYuan: number;
+  sizeSpec?: string;
+  buyer?: string;
 }
 
-export type FarmRecord = FeedRecord | WaterRecord | DrugRecord | HarvestRecord;
+export interface SamplingRecord extends BaseFarmRecord {
+  type: "sampling";
+  sampleCount: number;
+  averageWeightG: number;
+  estimatedStockQuantity?: number;
+}
 
+export interface MortalityRecord extends BaseFarmRecord {
+  type: "mortality";
+  count: number;
+  suspectedCause?: string;
+  handling?: string;
+}
+
+export type ExpenseCategory = "seed" | "electricity" | "labor" | "rent" | "equipment" | "other";
+
+export interface ExpenseRecord extends BaseFarmRecord {
+  type: "expense";
+  category: ExpenseCategory;
+  amountYuan: number;
+  itemName: string;
+}
+
+export type FarmRecord = FeedRecord | WaterRecord | DrugRecord | HarvestRecord | SamplingRecord | MortalityRecord | ExpenseRecord;
 export type FarmRecordInput =
-  | Omit<FeedRecord, "id" | "createdAt">
-  | Omit<WaterRecord, "id" | "createdAt">
-  | Omit<DrugRecord, "id" | "createdAt">
-  | Omit<HarvestRecord, "id" | "createdAt">;
+  | Omit<FeedRecord, "id" | "createdAt" | "updatedAt">
+  | Omit<WaterRecord, "id" | "createdAt" | "updatedAt">
+  | Omit<DrugRecord, "id" | "createdAt" | "updatedAt">
+  | Omit<HarvestRecord, "id" | "createdAt" | "updatedAt">
+  | Omit<SamplingRecord, "id" | "createdAt" | "updatedAt">
+  | Omit<MortalityRecord, "id" | "createdAt" | "updatedAt">
+  | Omit<ExpenseRecord, "id" | "createdAt" | "updatedAt">;
+
+export interface FarmSettings {
+  selectedPondId: string;
+  customProfileThresholds: Partial<Record<AlertProfileId, Partial<WaterThresholds>>>;
+}
+
+export interface SyncMeta {
+  protocolVersion: 2;
+  serverRevision: number;
+  lastSyncedAt: string;
+  deviceId: string;
+  status: SyncStatus;
+  message: string;
+  deletedPondIds: string[];
+  deletedRecordIds: string[];
+}
+
+export interface MigrationMeta {
+  sourceVersion: 1 | 2;
+  migratedAt: string;
+  needsPondCompletion: boolean;
+}
 
 export interface FarmState {
-  version: 1;
+  version: 2;
   ponds: Pond[];
   records: FarmRecord[];
+  settings: FarmSettings;
+  syncMeta: SyncMeta;
+  migrationMeta: MigrationMeta;
 }
 
 export interface DashboardMetric {
@@ -72,13 +166,15 @@ export interface PondDashboardSummary {
   pond: Pond;
   revenueYuan: number;
   feedCostYuan: number;
-  estimatedProfitYuan: number;
+  totalCostYuan: number;
+  operatingProfitYuan: number;
   recordCount: number;
   alert: string;
+  alertSeverity: AlertSeverity | "none";
 }
 
 export interface RecordShortcut {
-  id: RecordType;
+  id: Extract<RecordType, "feed" | "water" | "drug" | "harvest">;
   title: string;
   detail: string;
 }

@@ -3,7 +3,7 @@ import Taro, { useDidShow } from "@tarojs/taro";
 import { Text, View } from "@tarojs/components";
 import { shortcuts } from "../../data/seed";
 import { formatArea, formatMoney } from "../../domain/format";
-import { calculateFeedCost, calculateRevenue, getPondAlert, getRecordTitle } from "../../domain/operations";
+import { calculateFeedCost, calculateRevenue, calculateSurvivalRate, calculateFcr, calculateTotalCost, getCultureDays, getPondAlert, getRecordTitle } from "../../domain/operations";
 import { deactivatePond, loadFarmState } from "../../storage/farm-store";
 import type { FarmRecord, FarmState, Pond } from "../../types";
 import "./index.scss";
@@ -57,8 +57,11 @@ export default function PondDetailPage() {
 
   const revenue = calculateRevenue(records);
   const feedCost = calculateFeedCost(records);
-  const profit = revenue - feedCost;
-  const sortedRecords = [...records].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const totalCost = calculateTotalCost(records);
+  const profit = revenue - totalCost;
+  const survivalRate = calculateSurvivalRate(pond, records);
+  const fcr = calculateFcr(pond, records);
+  const sortedRecords = [...records].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   return (
     <View className="detail-page">
@@ -67,9 +70,9 @@ export default function PondDetailPage() {
         <Text className="title">{pond.name}</Text>
         {pond.status === "inactive" && <Text className="status-badge">已停用</Text>}
         <Text className="subtitle">
-          {pond.location} · {formatArea(pond.areaMu)} · 第 {pond.day} 天
+          {pond.location} · {formatArea(pond.areaMu)} · {getCultureDays(pond) === null ? "待补放苗日期" : "第 " + getCultureDays(pond) + " 天"}
         </Text>
-        <Text className="alert">{getPondAlert(pond, records)}</Text>
+        <Text className="alert">{getPondAlert(pond, { version: 2, ponds: [pond], records, settings: { selectedPondId: pond.id, customProfileThresholds: {} }, syncMeta: { protocolVersion: 2, serverRevision: 0, lastSyncedAt: "", deviceId: "", status: "local", message: "", deletedPondIds: [], deletedRecordIds: [] }, migrationMeta: { sourceVersion: 2, migratedAt: "", needsPondCompletion: pond.needsStockingDate } })}</Text>
         <View className="detail-actions">
           <Text className="outline-button" onClick={() => Taro.navigateTo({ url: `/pages/pond-form/index?pondId=${pond.id}` })}>
             编辑塘口
@@ -88,16 +91,16 @@ export default function PondDetailPage() {
           <Text className="summary-value">{formatMoney(revenue)}</Text>
         </View>
         <View className="summary-cell">
-          <Text className="summary-label">饲料成本</Text>
-          <Text className="summary-value">{formatMoney(feedCost)}</Text>
+          <Text className="summary-label">完整成本</Text>
+          <Text className="summary-value">{formatMoney(totalCost)}</Text>
         </View>
         <View className="summary-cell">
-          <Text className="summary-label">估算利润</Text>
+          <Text className="summary-label">经营利润</Text>
           <Text className="summary-value">{formatMoney(profit)}</Text>
         </View>
         <View className="summary-cell">
-          <Text className="summary-label">记录数</Text>
-          <Text className="summary-value">{records.length} 条</Text>
+          <Text className="summary-label">成活率 / FCR</Text>
+          <Text className="summary-value">{survivalRate === null ? "待补数据" : survivalRate.toFixed(1) + "%"} / {fcr === null ? "--" : fcr.toFixed(2)}</Text>
         </View>
       </View>
 
@@ -116,6 +119,11 @@ export default function PondDetailPage() {
                 onClick={() => Taro.navigateTo({ url: `/pages/record-form/index?pondId=${pond.id}&type=${item.id}` })}
               >
                 {item.title}
+              </Text>
+            ))}
+            {(["sampling", "mortality", "expense"] as const).map((type) => (
+              <Text className="action-button" key={type} onClick={() => Taro.navigateTo({ url: `/pages/record-form/index?pondId=${pond.id}&type=${type}` })}>
+                {{ sampling: "抽样", mortality: "死亡", expense: "支出" }[type]}
               </Text>
             ))}
           </View>

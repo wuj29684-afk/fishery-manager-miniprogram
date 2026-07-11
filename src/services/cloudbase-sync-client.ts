@@ -11,7 +11,7 @@ declare const wx: {
 export async function pushOwnedStateWithCloudBase(
   state: FarmState,
   deviceId: string,
-  lastSyncedAt?: string
+  force = false
 ): Promise<PushResult> {
   if (!wx.cloud) {
     throw new Error("当前基础库不支持云开发");
@@ -21,7 +21,7 @@ export async function pushOwnedStateWithCloudBase(
     name: "syncAccountData",
     data: {
       action: "push",
-      payload: createSyncPushPayload(state, deviceId, lastSyncedAt)
+      payload: createSyncPushPayload(state, deviceId, force)
     }
   });
 
