@@ -274,6 +274,12 @@ AppSecret
 - WeChat DevTools upload succeeded for version `0.2.1` with upload note `copy-sync: 修正云同步文案与审核说明`.
 - This is still not a formal release. Do not click formal publish/release or submit additional official steps without user confirmation.
 
+## 2026-07-12 0.2.6 正式发布上线
+
+- 用户已完成 `0.2.6` 正式发布，当前正式线上版本为 `0.2.6`。
+- 主仓另有 `0.2.7` 未提交审核的开发/体验版本记录；该体验版不改变 `0.2.6` 的正式线上状态。
+- 后续体验版覆盖、审核提交与正式发布仍需用户当次明确确认。
+
 ## 后续方向
 
 1. 当前 `0.1.3` 已提交微信代码审核，下一步等待审核结果；审核通过后的正式发布、扫码、验证码、人脸等敏感动作必须由用户确认或亲自操作。
