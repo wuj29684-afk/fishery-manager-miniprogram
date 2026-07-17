@@ -12,7 +12,7 @@ const form = read("src/pages/record-form/index.tsx");
 const seed = read("src/data/seed.ts");
 const pkg = JSON.parse(read("package.json"));
 
-assert.equal(pkg.version, "0.2.7");
+assert.equal(pkg.version, "0.2.8");
 assert.ok(app.indexOf('"pages/account-login/index"') < app.indexOf('"pages/index/index"'));
 assert.match(app, /pages\/records\/index/);
 assert.match(account, /微信登录并同步/);

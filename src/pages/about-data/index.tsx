@@ -14,8 +14,8 @@ const summaryCards = [
   },
   {
     label: "版本状态",
-    value: "0.2.7 体验版",
-    detail: "线上正式版为 0.2.6；当前 0.2.7 已上传体验版，尚未提交审核。",
+    value: "0.2.8 体验版",
+    detail: "线上正式版为 0.2.6；当前 0.2.8 已上传体验版，尚未提交审核。",
     Icon: BulbOutlined
   },
   {
@@ -115,7 +115,7 @@ export default function AboutDataPage() {
 
       <InfoSection title="线上版说明">
         <Text className="section-copy">
-          当前线上正式版为 0.2.6；0.2.7 已上传开发/体验版本，尚未提交审核或正式发布。
+          当前线上正式版为 0.2.6；0.2.8 已上传开发/体验版本，尚未提交审核或正式发布。
         </Text>
       </InfoSection>
 
