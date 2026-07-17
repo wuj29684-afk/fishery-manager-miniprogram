@@ -11,9 +11,9 @@ export default defineAppConfig({
   ],
   window: {
     backgroundTextStyle: "light",
-    navigationBarBackgroundColor: "#0f4d1f",
+    navigationBarBackgroundColor: "#ffffff",
     navigationBarTitleText: "渔儿小助手",
-    navigationBarTextStyle: "white",
-    backgroundColor: "#f7faf4"
+    navigationBarTextStyle: "black",
+    backgroundColor: "#f4f7f2"
   }
 });

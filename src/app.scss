@@ -1,11 +1,30 @@
+@import "@taroify/icons/index.css";
+
 page {
   min-height: 100%;
-  background: #f7faf4;
-  color: #102018;
+  --fm-green-900: #0a3f2b;
+  --fm-green-700: #0b6b45;
+  --fm-green-500: #26905f;
+  --fm-blue-500: #2687c8;
+  --fm-amber-500: #ef9417;
+  --fm-red-500: #d8473f;
+  --fm-bg: #f4f7f2;
+  --fm-card: #ffffff;
+  --fm-line: #e1e8e2;
+  --fm-text: #17251d;
+  --fm-muted: #6f7d75;
+  --fm-radius-card: 16px;
+  --fm-radius-control: 12px;
+  background: var(--fm-bg);
+  color: var(--fm-text);
   font-family: "PingFang SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif;
 }
 
 view,
 text {
   box-sizing: border-box;
+}
+
+.safe-tab-page {
+  padding-bottom: calc(132px + env(safe-area-inset-bottom));
 }

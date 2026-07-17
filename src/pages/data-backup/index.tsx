@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Taro from "@tarojs/taro";
 import { Text, Textarea, View } from "@tarojs/components";
+import AppTabBar from "../../components/AppTabBar";
 import { isCloudSyncConfigured } from "../../config/api";
 import { createJsonBackup, createRecordsCsv, parseJsonBackup } from "../../domain/export";
 import { createId } from "../../domain/id";
@@ -193,7 +194,7 @@ export default function DataBackupPage() {
   }
 
   return (
-    <View className="backup-page">
+    <View className="backup-page safe-tab-page">
       <View className="backup-head">
         <Text className="eyebrow">本地备份</Text>
         <Text className="title">数据与设置</Text>
@@ -234,14 +235,14 @@ export default function DataBackupPage() {
         <Text className="hint">云同步按微信登录账号隔离塘口和记录；覆盖本机前会二次确认。</Text>
       </View>
 
-      <View className="action-section">
+      <View className="action-section about-section">
         <Text className="section-title">产品与数据说明</Text>
         <View className="copy-button" onClick={() => Taro.navigateTo({ url: "/pages/about-data/index" })}>
           查看功能范围与隐私边界
         </View>
       </View>
 
-      <View className="action-section">
+      <View className="action-section backup-section">
         <Text className="section-title">复制备份</Text>
         <View className="copy-button primary" onClick={handleCopyJson}>
           复制完整 JSON
@@ -271,6 +272,7 @@ export default function DataBackupPage() {
         <Textarea className="preview" disabled value={preview || "点击上方按钮后，这里会显示最近一次导出的内容。"} maxlength={-1} />
         <Text className="hint">{preview ? `当前预览：${previewKind.toUpperCase()}` : "JSON 可用于恢复，CSV 适合粘贴到表格查看。"}</Text>
       </View>
+      <AppTabBar active="data" />
     </View>
   );
 }

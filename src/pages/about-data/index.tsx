@@ -1,27 +1,34 @@
-import { Text, View } from "@tarojs/components";
+import { Image, Text, View } from "@tarojs/components";
+import { BarChartOutlined, BulbOutlined, RecordsOutlined, ShieldOutlined } from "@taroify/icons";
 import type { ReactNode } from "react";
+import brandEmblem from "../../assets/brand-emblem.png";
+import pondLandscape from "../../assets/pond-landscape.jpg";
 import "./index.scss";
 
 const summaryCards = [
   {
     label: "数据方式",
     value: "本机优先 + 账号同步",
-    detail: "默认保存在本机；用户主动绑定或拉取时，通过微信云开发按当前微信账号隔离同步。"
+    detail: "默认保存在本机；主动操作后才按当前微信账号隔离同步。",
+    Icon: ShieldOutlined
   },
   {
     label: "版本状态",
-    value: "0.2.5 开发版",
-    detail: "正在升级启动体验、专业养殖记录、预警与可靠同步；尚未上传或发布。"
+    value: "0.2.7 体验版",
+    detail: "线上正式版为 0.2.6；当前 0.2.7 已上传体验版，尚未提交审核。",
+    Icon: BulbOutlined
   },
   {
     label: "能力范围",
     value: "塘口 + 记录 + 备份",
-    detail: "支持本地经营记录、搜索筛选、JSON 备份和恢复。"
+    detail: "支持塘口、七类记录、预警、经营汇总、备份和恢复。",
+    Icon: RecordsOutlined
   },
   {
-    label: "客服状态",
-    value: "暂无在线客服",
-    detail: "当前线上版暂无在线客服，后续按运营需要补齐。"
+    label: "数据安全",
+    value: "本机代管 + 云端隔离",
+    detail: "不出售经营数据，不接入广告画像，账号数据按微信身份隔离。",
+    Icon: BarChartOutlined
   }
 ];
 
@@ -65,14 +72,14 @@ export default function AboutDataPage() {
   return (
     <View className="about-page">
       <View className="about-head">
-        <Text className="eyebrow">产品说明</Text>
-        <Text className="title">关于与数据说明</Text>
-        <Text className="subtitle">了解当前版本能力、数据存储方式和隐私边界。</Text>
+        <Image className="about-emblem" src={brandEmblem} mode="aspectFit" />
+        <View><Text className="title">渔儿小助手</Text><Text className="subtitle">帮助水产养殖户高效记录、科学管理、稳产增收</Text></View>
       </View>
 
       <View className="summary-grid">
         {summaryCards.map((card) => (
           <View className="summary-card" key={card.label}>
+            <card.Icon className="summary-icon" size="24" />
             <Text className="summary-label">{card.label}</Text>
             <Text className="summary-value">{card.value}</Text>
             <Text className="summary-detail">{card.detail}</Text>
@@ -108,7 +115,7 @@ export default function AboutDataPage() {
 
       <InfoSection title="线上版说明">
         <Text className="section-copy">
-          当前线上仍为 0.2.4；本机正在开发 0.2.5，尚未上传体验版或发布。
+          当前线上正式版为 0.2.6；0.2.7 已上传开发/体验版本，尚未提交审核或正式发布。
         </Text>
       </InfoSection>
 
@@ -129,6 +136,7 @@ export default function AboutDataPage() {
           </Text>
         ))}
       </InfoSection>
+      <Image className="about-landscape" src={pondLandscape} mode="aspectFill" />
     </View>
   );
 }

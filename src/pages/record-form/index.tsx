@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import Taro from "@tarojs/taro";
 import { Input, Picker, Text, Textarea, View } from "@tarojs/components";
+import { BagOutlined, BarChartOutlined, BulbOutlined, CouponOutlined, GoldCoinOutlined, RecordsOutlined, WarningOutlined } from "@taroify/icons";
 import { todayString } from "../../domain/format";
 import { labelForRecordType, parseOptionalNumber, parseRequiredNumber } from "../../domain/validation";
 import { hasActiveWithdrawal } from "../../domain/withdrawal";
 import { addRecord, deleteRecord, loadFarmState, updateRecord } from "../../storage/farm-store";
 import type { ExpenseCategory, FarmRecord, FarmRecordInput, Pond, RecordType } from "../../types";
 import "./index.scss";
-import "./index-v2.scss";
 
 const recordTypes: RecordType[] = ["feed", "water", "drug", "harvest", "sampling", "mortality", "expense"];
+const recordIcons = { feed: BagOutlined, water: BulbOutlined, drug: CouponOutlined, harvest: BarChartOutlined, sampling: RecordsOutlined, mortality: WarningOutlined, expense: GoldCoinOutlined };
 const expenseCategories: ExpenseCategory[] = ["seed", "electricity", "labor", "rent", "equipment", "other"];
 const expenseLabels = ["苗种", "电费", "人工", "塘租", "设备", "其他"];
 const route = () => Taro.getCurrentInstance().router?.params || {};
@@ -111,9 +112,9 @@ export default function RecordFormPage() {
 
   return <View className="form-page">
     <View className="form-head"><Text className="title">{editing ? "编辑" : "新增"}{labelForRecordType(type)}记录</Text><Text className="subtitle">核心项优先，专业信息可按需展开。</Text></View>
-    {!editing && <View className="record-type-tabs">{recordTypes.map((item) => <Text className={"type-tab " + (type === item ? "active" : "")} key={item} onClick={() => { setType(item); setValues({}); }}>{labelForRecordType(item)}</Text>)}</View>}
+    {!editing && <View className="record-type-tabs">{recordTypes.map((item) => { const Icon = recordIcons[item]; return <View className={"type-tab " + (type === item ? "active" : "")} key={item} onClick={() => { setType(item); setValues({}); }}><Icon className="type-icon" size="22" /><Text>{labelForRecordType(item)}</Text></View>; })}</View>}
     <Picker mode="selector" range={pondNames} value={pondIndex} onChange={(event) => setPondId(ponds[Number(event.detail.value)]?.id || "")}><View className="pond-picker"><Text className="label">塘口</Text><Text className="picker-value">{ponds[pondIndex]?.name || "暂无可用塘口"}</Text></View></Picker>
-    <Field label="日期" value={date} placeholder="YYYY-MM-DD" onInput={setDate} />
+    <Picker mode="date" value={date} onChange={(event) => setDate(event.detail.value)}><View className="field"><Text className="label">记录日期</Text><Text className="picker-value">{date}</Text></View></Picker>
     <CoreFields type={type} values={values} set={set} />
     <Text className="expand-button" onClick={() => setExpanded(!expanded)}>{expanded ? "收起专业信息" : "补充专业信息"}</Text>
     {expanded && <ExtraFields type={type} values={values} set={set} />}

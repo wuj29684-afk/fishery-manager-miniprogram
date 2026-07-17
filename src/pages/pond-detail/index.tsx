@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import Taro, { useDidShow } from "@tarojs/taro";
 import { Text, View } from "@tarojs/components";
+import { BagOutlined, BarChartOutlined, BulbOutlined, CouponOutlined, GoldCoinOutlined, RecordsOutlined, WarningOutlined } from "@taroify/icons";
 import { shortcuts } from "../../data/seed";
 import { formatArea, formatMoney } from "../../domain/format";
 import { calculateFeedCost, calculateRevenue, calculateSurvivalRate, calculateFcr, calculateTotalCost, getCultureDays, getPondAlert, getRecordTitle } from "../../domain/operations";
 import { deactivatePond, deletePond, loadFarmState } from "../../storage/farm-store";
 import type { FarmRecord, FarmState, Pond } from "../../types";
 import "./index.scss";
+
+const actionIcons = { feed: BagOutlined, water: BulbOutlined, drug: CouponOutlined, harvest: BarChartOutlined, sampling: RecordsOutlined, mortality: WarningOutlined, expense: GoldCoinOutlined };
 
 function getRoutePondId(): string {
   return Taro.getCurrentInstance().router?.params?.id ?? "";
@@ -98,14 +101,6 @@ export default function PondDetailPage() {
           <Text className="outline-button" onClick={() => Taro.navigateTo({ url: `/pages/pond-form/index?pondId=${pond.id}` })}>
             编辑塘口
           </Text>
-          {pond.status !== "inactive" && (
-            <Text className="danger-button" onClick={handleDeactivate}>
-              停用塘口
-            </Text>
-          )}
-          <Text className="delete-button" onClick={handleDelete}>
-            删除塘口
-          </Text>
         </View>
       </View>
 
@@ -136,20 +131,20 @@ export default function PondDetailPage() {
         <View className="section">
           <Text className="section-title">新增记录</Text>
           <View className="action-grid">
-            {shortcuts.map((item) => (
-              <Text
+            {shortcuts.map((item) => { const Icon = actionIcons[item.id]; return (
+              <View
                 className="action-button"
                 key={item.id}
                 onClick={() => Taro.navigateTo({ url: `/pages/record-form/index?pondId=${pond.id}&type=${item.id}` })}
               >
-                {item.title}
-              </Text>
-            ))}
-            {(["sampling", "mortality", "expense"] as const).map((type) => (
-              <Text className="action-button" key={type} onClick={() => Taro.navigateTo({ url: `/pages/record-form/index?pondId=${pond.id}&type=${type}` })}>
-                {{ sampling: "抽样", mortality: "死亡", expense: "支出" }[type]}
-              </Text>
-            ))}
+                <Icon size="22" /><Text>{item.title}</Text>
+              </View>
+            ); })}
+            {(["sampling", "mortality", "expense"] as const).map((type) => { const Icon = actionIcons[type]; return (
+              <View className="action-button" key={type} onClick={() => Taro.navigateTo({ url: `/pages/record-form/index?pondId=${pond.id}&type=${type}` })}>
+                <Icon size="22" /><Text>{{ sampling: "抽样", mortality: "死亡", expense: "支出" }[type]}</Text>
+              </View>
+            ); })}
           </View>
         </View>
       )}
@@ -174,6 +169,12 @@ export default function PondDetailPage() {
             </View>
           ))
         )}
+      </View>
+      <View className="management-section">
+        <Text className="section-title">塘口管理</Text>
+        <Text className="section-hint">停用后保留历史记录；永久删除无法恢复。</Text>
+        {pond.status !== "inactive" && <Text className="danger-button" onClick={handleDeactivate}>停用塘口</Text>}
+        <Text className="delete-button" onClick={handleDelete}>永久删除塘口</Text>
       </View>
     </View>
   );

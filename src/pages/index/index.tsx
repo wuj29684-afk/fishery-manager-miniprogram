@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Taro, { useDidShow } from "@tarojs/taro";
 import { Input, Picker, Text, View } from "@tarojs/components";
-import { shortcuts } from "../../data/seed";
+import { BagOutlined, BarChartOutlined, BulbOutlined, CouponOutlined, GoldCoinOutlined, MoreOutlined, RecordsOutlined, WarningOutlined } from "@taroify/icons";
+import AppTabBar from "../../components/AppTabBar";
 import { formatArea, formatMoney, todayString } from "../../domain/format";
 import { getCultureDays, getPondSummaries } from "../../domain/operations";
 import { evaluatePondHealth } from "../../domain/pond-health";
 import { FarmDataError, loadExperienceExample, loadFarmState, setSelectedPond } from "../../storage/farm-store";
 import type { FarmState, Pond, RecordType } from "../../types";
 import "./index.scss";
-import "./index-v2.scss";
 
 type PondStatusFilter = "all" | "active" | "inactive";
 
@@ -16,6 +16,16 @@ const filters: Array<{ value: PondStatusFilter; label: string }> = [
   { value: "all", label: "全部" },
   { value: "active", label: "养殖中" },
   { value: "inactive", label: "已停用" }
+];
+
+const homeActions = [
+  { id: "feed" as const, title: "投料", Icon: BagOutlined },
+  { id: "water" as const, title: "水质", Icon: BulbOutlined },
+  { id: "drug" as const, title: "用药", Icon: CouponOutlined },
+  { id: "harvest" as const, title: "收获", Icon: BarChartOutlined },
+  { id: "sampling" as const, title: "抽样", Icon: RecordsOutlined },
+  { id: "mortality" as const, title: "死亡", Icon: WarningOutlined },
+  { id: "expense" as const, title: "支出", Icon: GoldCoinOutlined }
 ];
 
 function dateLabel(): string {
@@ -58,6 +68,7 @@ export default function IndexPage() {
     return {
       activePonds,
       selected,
+      selectedSummary: summaries.find((summary) => summary.pond.id === selected?.id),
       selectedIndex: Math.max(0, activePonds.findIndex((pond) => pond.id === selected?.id)),
       topAlert: alerts.find((item) => item.alert.category === "risk") || alerts[0],
       visible: summaries.filter((summary) => {
@@ -94,10 +105,10 @@ export default function IndexPage() {
   if (!state || !model) return <View className="page page-loading"><Text>正在读取本机数据...</Text></View>;
 
   if (!state.ponds.length) {
-    return <View className="page empty-page"><Header state={state} /><View className="empty-state"><Text className="empty-title">从自己的塘口开始</Text><Text className="empty-copy">创建真实塘口，或先打开一个体验示例看看日常记录、预警和经营数据如何呈现。</Text><Text className="primary-button" onClick={() => Taro.navigateTo({ url: "/pages/pond-form/index" })}>创建我的塘口</Text><View className="experience-entry" onClick={openExperienceExample}><Text className="experience-title">先看体验示例</Text><Text className="experience-copy">示例对虾塘，包含水质、投料和抽样记录</Text><Text className="experience-note">仅保存在本机，可随时永久删除</Text></View></View></View>;
+    return <View className="page safe-tab-page empty-page"><Header state={state} /><View className="empty-state"><Text className="empty-title">从自己的塘口开始</Text><Text className="empty-copy">创建真实塘口，或先打开一个体验示例看看日常记录、预警和经营数据如何呈现。</Text><Text className="primary-button" onClick={() => Taro.navigateTo({ url: "/pages/pond-form/index" })}>创建我的塘口</Text><View className="experience-entry" onClick={openExperienceExample}><Text className="experience-title">先看体验示例</Text><Text className="experience-copy">示例对虾塘，包含水质、投料和抽样记录</Text><Text className="experience-note">仅保存在本机，可随时永久删除</Text></View></View><AppTabBar active="home" /></View>;
   }
 
-  return <View className="page">
+  return <View className="page safe-tab-page">
     <Header state={state} />
     {model.topAlert ? (
       <View className={`priority-alert priority-${model.topAlert.alert.severity}`}>
@@ -111,7 +122,11 @@ export default function IndexPage() {
     <View className="section current-pond">
       <View className="section-head"><Text className="section-title">当前塘口</Text><Picker mode="selector" range={model.activePonds.map((pond) => pond.name)} value={model.selectedIndex} onChange={(event) => choosePond(model.activePonds[Number(event.detail.value)])}><Text className="pond-switch">切换</Text></Picker></View>
       {model.selected && <><Text className="current-name">{model.selected.name}</Text><Text className="current-meta">{model.selected.species} · {formatArea(model.selected.areaMu)} · {getCultureDays(model.selected) === null ? "待补放苗日期" : `养殖 ${getCultureDays(model.selected)} 天`}</Text></>}
-      <View className="quick-grid">{shortcuts.map((item) => <View className={`quick quick-${item.id}`} key={item.id} onClick={() => openRecord(item.id)}><Text className="quick-title">{item.title}</Text><Text className="quick-detail">{item.detail}</Text></View>)}</View>
+      <View className="quick-grid">
+        {homeActions.map(({ id, title, Icon }) => <View className={`quick quick-${id}`} key={id} onClick={() => openRecord(id)}><Icon className="quick-icon" size="24" /><Text className="quick-title">{title}</Text></View>)}
+        <View className="quick quick-more" onClick={() => Taro.navigateTo({ url: "/pages/records/index" })}><MoreOutlined className="quick-icon" size="24" /><Text className="quick-title">更多</Text></View>
+      </View>
+      {model.selectedSummary && <View className="metric-strip"><View><Text className="metric-value">{model.selectedSummary.recordCount}</Text><Text className="metric-label">累计记录</Text></View><View><Text className="metric-value">{formatMoney(model.selectedSummary.revenueYuan)}</Text><Text className="metric-label">累计收入</Text></View><View><Text className="metric-value">{formatMoney(model.selectedSummary.operatingProfitYuan)}</Text><Text className="metric-label">经营利润</Text></View><View><Text className="metric-value">{model.selectedSummary.alertSeverity === "none" ? "正常" : "关注"}</Text><Text className="metric-label">当前状态</Text></View></View>}
     </View>
 
     <View className="section">
@@ -120,9 +135,10 @@ export default function IndexPage() {
       <View className="filter-tabs">{filters.map((item) => <Text className={`filter-tab ${filter === item.value ? "active" : ""}`} key={item.value} onClick={() => setFilter(item.value)}>{item.label}</Text>)}</View>
       {model.visible.map((summary) => <View className={`pond-card ${summary.pond.status === "inactive" ? "pond-card-inactive" : ""}`} key={summary.pond.id} onClick={() => Taro.navigateTo({ url: `/pages/pond-detail/index?id=${summary.pond.id}` })}><View className="pond-heading"><Text className="pond-name">{summary.pond.name}</Text><Text className={`alert-dot alert-${summary.alertSeverity}`}>{summary.alertSeverity === "none" ? "正常" : "关注"}</Text></View><Text className="pond-meta">{summary.pond.species} · {formatArea(summary.pond.areaMu)}</Text>{summary.recordCount ? <View className="pond-stats"><Text>收入 {formatMoney(summary.revenueYuan)}</Text><Text>利润 {formatMoney(summary.operatingProfitYuan)}</Text><Text>{summary.recordCount} 条</Text></View> : <Text className="empty">暂无经营数据</Text>}<Text className="pond-alert">{summary.alert}</Text></View>)}
     </View>
+    <AppTabBar active="home" />
   </View>;
 }
 
 function Header({ state }: { state: FarmState }) {
-  return <View className="compact-head"><View><Text className="eyebrow">{dateLabel()} · 养殖管理</Text><Text className="brand">渔儿小助手</Text></View><View className="head-tools"><Text className={`sync-chip sync-${state.syncMeta.status}`}>{syncLabel(state)}</Text><Text className="icon-button" onClick={() => Taro.navigateTo({ url: "/pages/records/index" })}>记录</Text><Text className="icon-button" onClick={() => Taro.navigateTo({ url: "/pages/data-backup/index" })}>数据</Text></View></View>;
+  return <View className="compact-head"><View><Text className="eyebrow">{dateLabel()} · 养殖管理</Text><Text className="brand">渔儿小助手</Text></View><Text className={`sync-chip sync-${state.syncMeta.status}`}>● {syncLabel(state)}</Text></View>;
 }

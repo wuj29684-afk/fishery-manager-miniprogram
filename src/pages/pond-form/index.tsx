@@ -28,6 +28,7 @@ export default function PondFormPage() {
   const [ammoniaMax, setAmmoniaMax] = useState("");
   const [nitriteMax, setNitriteMax] = useState("");
   const [saving, setSaving] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -88,14 +89,12 @@ export default function PondFormPage() {
     <Field label="塘口名称" value={name} placeholder="例如 3号高位池" onInput={setName} />
     <Field label="养殖品种" value={species} placeholder="例如 南美白对虾" onInput={(value) => { setSpecies(value); if (!pondId) setAlertProfileId(inferAlertProfile(value)); }} />
     <Field label="所在位置" value={location} placeholder="例如 广东湛江 麻章区" onInput={setLocation} />
-    <View className="field-row"><Field label="面积（亩）" value={areaMu} placeholder="8.5" type="digit" onInput={setAreaMu} /><Field label="放苗日期" value={stockingDate} placeholder="YYYY-MM-DD" onInput={setStockingDate} /></View>
+    <View className="field-row"><Field label="面积（亩）" value={areaMu} placeholder="8.5" type="digit" onInput={setAreaMu} /><DateField label="放苗日期" value={stockingDate} onChange={setStockingDate} /></View>
     <View className="field-row"><Field label="放苗数量（尾）" value={stockingQuantity} placeholder="50000" type="number" onInput={setStockingQuantity} /><Field label="初始规格（克/尾）" value={initialSize} placeholder="0.02" onInput={setInitialSize} /></View>
-    <View className="field-row"><Field label="养殖阶段" value={cultureStage} placeholder="苗期/中期/后期" onInput={setCultureStage} /><Field label="目标出塘日期" value={targetHarvestDate} placeholder="YYYY-MM-DD" onInput={setTargetHarvestDate} /></View>
+    <View className="field-row"><Field label="养殖阶段" value={cultureStage} placeholder="苗期/中期/后期" onInput={setCultureStage} /><DateField label="目标出塘日期" value={targetHarvestDate} onChange={setTargetHarvestDate} /></View>
     <Picker mode="selector" range={profileIds.map((id) => alertProfiles[id].name)} value={profileIds.indexOf(alertProfileId)} onChange={(event) => setAlertProfileId(profileIds[Number(event.detail.value)])}><View className="pond-picker"><Text className="label">水质预警模板</Text><Text className="picker-value">{alertProfiles[alertProfileId].name}</Text></View></Picker>
-    <Text className="label">自定义参考范围（可选）</Text>
-    <View className="field-row"><Field label="pH 下限" value={phMin} placeholder="使用模板" type="digit" onInput={setPhMin} /><Field label="pH 上限" value={phMax} placeholder="使用模板" type="digit" onInput={setPhMax} /></View>
-    <View className="field-row"><Field label="溶氧下限" value={oxygenMin} placeholder="使用模板" type="digit" onInput={setOxygenMin} /><Field label="氨氮上限" value={ammoniaMax} placeholder="使用模板" type="digit" onInput={setAmmoniaMax} /></View>
-    <Field label="亚硝酸盐上限" value={nitriteMax} placeholder="使用模板" type="digit" onInput={setNitriteMax} />
+    <View className="advanced-toggle" onClick={() => setAdvancedOpen(!advancedOpen)}><Text>高级预警范围（可选）</Text><Text>{advancedOpen ? "收起" : "展开"}</Text></View>
+    {advancedOpen && <View className="advanced-fields"><View className="field-row"><Field label="pH 下限" value={phMin} placeholder="使用模板" type="digit" onInput={setPhMin} /><Field label="pH 上限" value={phMax} placeholder="使用模板" type="digit" onInput={setPhMax} /></View><View className="field-row"><Field label="溶氧下限" value={oxygenMin} placeholder="使用模板" type="digit" onInput={setOxygenMin} /><Field label="氨氮上限" value={ammoniaMax} placeholder="使用模板" type="digit" onInput={setAmmoniaMax} /></View><Field label="亚硝酸盐上限" value={nitriteMax} placeholder="使用模板" type="digit" onInput={setNitriteMax} /></View>}
     <Text className="hint">预警模板为养殖参考范围，可在后续数据设置中按塘口调整。</Text>
     <Text className="save-button" onClick={save}>{saving ? "保存中..." : "保存塘口"}</Text>
   </View>;
@@ -103,4 +102,8 @@ export default function PondFormPage() {
 
 function Field(props: { label: string; value: string; placeholder: string; type?: "text" | "number" | "digit"; onInput(value: string): void }) {
   return <View className="field compact"><Text className="label">{props.label}</Text><Input className="input" type={props.type || "text"} value={props.value} placeholder={props.placeholder} onInput={(event) => props.onInput(event.detail.value)} /></View>;
+}
+
+function DateField(props: { label: string; value: string; onChange(value: string): void }) {
+  return <Picker mode="date" value={props.value} onChange={(event) => props.onChange(event.detail.value)}><View className="field compact"><Text className="label">{props.label}</Text><Text className={`picker-value ${props.value ? "" : "placeholder"}`}>{props.value || "请选择日期"}</Text></View></Picker>;
 }

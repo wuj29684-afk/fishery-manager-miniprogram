@@ -1,11 +1,14 @@
 import { useState } from "react";
 import Taro from "@tarojs/taro";
-import { Text, View } from "@tarojs/components";
+import { Image, Text, View } from "@tarojs/components";
+import { ShieldOutlined, Wechat } from "@taroify/icons";
 import { isCloudSyncConfigured } from "../../config/api";
 import { createId } from "../../domain/id";
 import { createLocalStateFromPullResult } from "../../domain/sync-state";
 import { pullAccountState, pushAccountState } from "../../services/account-sync-service";
 import { hasExperienceExample, loadFarmState, removeKnownDemoState, saveFarmState, saveRecoveryPoint } from "../../storage/farm-store";
+import brandEmblem from "../../assets/brand-emblem.png";
+import pondLandscape from "../../assets/pond-landscape.jpg";
 import "./index.scss";
 
 const DEVICE_ID_KEY = "fishery-manager:device-id:v1";
@@ -70,20 +73,24 @@ export default function AccountLoginPage() {
   return (
     <View className="login-page">
       <View className="login-brand">
+        <Image className="login-emblem" src={brandEmblem} mode="aspectFit" />
         <Text className="login-name">渔儿小助手</Text>
-        <Text className="login-tagline">简单记录，安心养殖</Text>
+        <Text className="login-tagline">专业的水产养殖管理工具</Text>
       </View>
+      <Image className="login-landscape" src={pondLandscape} mode="aspectFill" />
 
       <View className="login-actions">
         <View className={`login-primary ${loading ? "login-busy" : ""}`} onClick={handleAccountEntry}>
-          <Text className="login-primary-text">{loading ? "正在进入账号数据..." : "使用微信账号数据进入"}</Text>
+          <Wechat className="login-primary-icon" size="22" />
+          <Text className="login-primary-text">{loading ? "正在进入账号数据..." : "微信登录并同步"}</Text>
         </View>
-        <View className="login-skip" onClick={enterHome}>暂不登录，直接进入</View>
+        <View className="login-skip" onClick={enterHome}>仅在本机使用</View>
       </View>
 
       <View className="login-footnotes">
-        <Text className="login-footnote">账号进入会使用当前微信账号下的塘口和记录。</Text>
-        <Text className="login-footnote">直接进入只使用本机数据，之后仍可在数据与设置中同步。</Text>
+        <ShieldOutlined className="login-shield" size="18" />
+        <Text className="login-footnote">登录即表示同意《用户协议》与《隐私政策》</Text>
+        <Text className="login-footnote login-footnote-secondary">数据加密传输，仅限您的信息安全</Text>
       </View>
     </View>
   );
