@@ -14,8 +14,8 @@ const summaryCards = [
   },
   {
     label: "版本状态",
-    value: "0.2.8 体验版",
-    detail: "线上正式版为 0.2.6；当前 0.2.8 已上传体验版，尚未提交审核。",
+    value: "0.2.9 审核修复版",
+    detail: "线上正式版为 0.2.6；当前 0.2.9 已改为先浏览、后主动同步，尚待上传。",
     Icon: BulbOutlined
   },
   {
@@ -50,7 +50,7 @@ const boundaryItems = [
   "本机卸载微信、清理小程序数据或更换设备后，本地数据可能无法自动恢复；如需恢复，请先使用 JSON 备份或账号同步。"
 ];
 
-const reviewPath = ["账号进入", "首页", "新增塘口", "快速记录", "塘口详情", "数据备份", "关于与数据"];
+const reviewPath = ["首页", "体验示例或创建塘口", "快速记录", "塘口详情", "数据与设置", "关于与数据"];
 
 const roadmapItems = [
   "继续完善隐私政策、用户协议、服务类目和审核截图素材，使说明与云同步能力保持一致。",
@@ -115,7 +115,7 @@ export default function AboutDataPage() {
 
       <InfoSection title="线上版说明">
         <Text className="section-copy">
-          当前线上正式版为 0.2.6；0.2.8 已上传开发/体验版本，尚未提交审核或正式发布。
+          当前线上正式版为 0.2.6；0.2.9 审核修复版已改为首屏免登录浏览，尚待上传和重新提交审核。
         </Text>
       </InfoSection>
 

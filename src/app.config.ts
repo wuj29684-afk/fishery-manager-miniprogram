@@ -1,6 +1,5 @@
 export default defineAppConfig({
   pages: [
-    "pages/account-login/index",
     "pages/index/index",
     "pages/pond-detail/index",
     "pages/pond-form/index",

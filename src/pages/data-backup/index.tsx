@@ -198,7 +198,7 @@ export default function DataBackupPage() {
       <View className="backup-head">
         <Text className="eyebrow">本地备份</Text>
         <Text className="title">数据与设置</Text>
-        <Text className="subtitle">导出和恢复默认只作用于本机本地存储；账号同步仅在配置云端服务后可用。</Text>
+        <Text className="subtitle">本机浏览、记录、导出和恢复均无需登录；账号同步仅在您主动选择后使用。</Text>
       </View>
 
       <View className="summary-grid">
@@ -222,7 +222,7 @@ export default function DataBackupPage() {
       </View>
 
       <View className="sync-section">
-        <Text className="section-title">账号同步</Text>
+        <Text className="section-title">可选账号同步</Text>
         <Text className="sync-status">
           {getAccountSyncStatusText()}
         </Text>
@@ -232,7 +232,7 @@ export default function DataBackupPage() {
         <View className={`copy-button ${isCloudSyncConfigured() ? "" : "disabled"}`} onClick={handleUseAccountData}>
           使用账号数据
         </View>
-        <Text className="hint">云同步按微信登录账号隔离塘口和记录；覆盖本机前会二次确认。</Text>
+        <Text className="hint">本机浏览和记录无需登录。仅当您主动绑定或恢复账号数据时，才按当前微信账号隔离同步；覆盖本机前会二次确认。</Text>
       </View>
 
       <View className="action-section about-section">
