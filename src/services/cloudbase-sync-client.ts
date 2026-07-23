@@ -39,7 +39,7 @@ export async function pullOwnedStateWithCloudBase(): Promise<PullResult> {
 
   const response = await wx.cloud.callFunction<PullResult>({
     name: "syncAccountData",
-    data: { action: "pull", protocolVersion: 2 }
+    data: { action: "pull", protocolVersion: 3 }
   });
 
   if (!response.result?.ponds || !response.result.records) {

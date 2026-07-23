@@ -19,13 +19,18 @@ function finite(value: unknown, min = 0): value is number {
 }
 
 function validPond(pond: Pond): boolean {
+  const hasValidShape =
+    pond.unitType === "pond"
+      ? finite(pond.areaMu)
+      : finite(pond.cageLengthM || 0) && finite(pond.cageWidthM || 0) && finite(pond.cageDepthM || 0);
   return Boolean(
     pond.id &&
+      ["pond", "cage"].includes(pond.unitType) &&
       pond.name.trim() &&
       pond.species.trim() &&
-      finite(pond.areaMu) &&
+      hasValidShape &&
       ["active", "inactive"].includes(pond.status) &&
-      ["shrimp", "tilapia", "general"].includes(pond.alertProfileId) &&
+      ["shrimp", "tilapia", "cageFish", "general"].includes(pond.alertProfileId) &&
       (!pond.stockingDate || validDate(pond.stockingDate))
   );
 }

@@ -1,4 +1,4 @@
-import type { RecordType } from "../types";
+import type { FarmUnitType, RecordType } from "../types";
 
 export interface ValidationResult { valid: boolean; message: string; }
 export interface NumberValidationResult extends ValidationResult { value: number; }
@@ -26,13 +26,14 @@ export function parseOptionalNumber(value: string, label: string, min = 0, max =
   return { ...validateNumberRange(parsed, label, min, max), value: parsed };
 }
 
-export function validatePondInput(input: { name: string; species: string; location: string; areaMu: number; stockingDate?: string }): ValidationResult {
-  if (!input.name.trim()) return { valid: false, message: "请填写塘口名称" };
+export function validatePondInput(input: { unitType: FarmUnitType; name: string; species: string; location: string; areaMu: number; cageLengthM?: number; cageWidthM?: number; cageDepthM?: number; stockingDate?: string }): ValidationResult {
+  if (!input.name.trim()) return { valid: false, message: "请填写养殖单元名称" };
   if (!input.species.trim()) return { valid: false, message: "请填写养殖品种" };
-  if (!input.location.trim()) return { valid: false, message: "请填写所在位置" };
-  const area = validatePositiveNumber(input.areaMu, "面积");
-  if (!area.valid) return area;
-  if (input.stockingDate && !/^\d{4}-\d{2}-\d{2}$/.test(input.stockingDate)) return { valid: false, message: "放苗日期格式不正确" };
+  if (!input.stockingDate) return { valid: false, message: "请选择投放日期" };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.stockingDate)) return { valid: false, message: "投放日期格式不正确" };
+  if (input.areaMu < 0) return { valid: false, message: "面积不能小于 0" };
+  const dimensions = [input.cageLengthM, input.cageWidthM, input.cageDepthM].filter((value) => value !== undefined);
+  if (dimensions.some((value) => !Number.isFinite(value) || (value || 0) <= 0)) return { valid: false, message: "网箱尺寸请填写有效数字" };
   return { valid: true, message: "" };
 }
 

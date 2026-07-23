@@ -1,0 +1,25 @@
+.units-page { min-height: 100vh; padding: 18px 22px 44px; background: var(--fm-bg); }
+.units-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.title { display: block; color: var(--fm-text); font-size: 40px; font-weight: 800; }
+.add-unit { display: flex; align-items: center; gap: 4px; color: var(--fm-blue-500); font-size: 28px; font-weight: 700; }
+.search-box { display: flex; min-height: 88px; align-items: center; gap: 12px; padding: 0 18px; border-radius: 8px; background: #eef2f6; color: #7c8794; }
+.unit-search { min-width: 0; min-height: 88px; flex: 1; font-size: 30px; }
+.search-box > text { color: #566474; font-size: 27px; }
+.filter-tabs { display: grid; grid-template-columns: repeat(3, 1fr); padding: 15px 0 0; border-bottom: 1px solid var(--fm-line); }
+.filter-tabs text { padding: 0 0 16px; border-bottom: 3px solid transparent; color: var(--fm-muted); font-size: 27px; text-align: center; }
+.filter-tabs text.active { border-color: var(--fm-blue-500); color: var(--fm-blue-500); font-weight: 800; }
+.unit-group-title { display: block; padding: 22px 2px 12px; color: var(--fm-text); font-size: 30px; font-weight: 800; }
+.unit-card { display: flex; min-height: 156px; align-items: center; gap: 18px; padding: 18px; margin-bottom: 14px; border: 1px solid var(--fm-line); border-radius: 8px; background: #fff; }
+.unit-copy { min-width: 0; flex: 1; }
+.unit-thumb { flex-shrink: 0; width: 132px; height: 106px; overflow: hidden; border-radius: 7px; background: #e8f4ff; }
+.unit-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.unit-name { overflow: hidden; color: var(--fm-text); font-size: 34px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.unit-status { flex-shrink: 0; font-size: 25px; font-weight: 700; }
+.unit-status.normal { color: #079565; }
+.unit-status.attention { color: var(--fm-blue-500); }
+.unit-status.danger { color: var(--fm-red-500); }
+.unit-meta { display: block; margin-top: 12px; color: var(--fm-muted); font-size: 28px; }
+.unit-card.inactive { opacity: .58; }
+.empty, .empty-state { display: block; padding: 56px 0; color: var(--fm-muted); font-size: 20px; text-align: center; }
+.empty-state text { display: block; }
+.empty-state text:last-child { margin-top: 16px; color: var(--fm-blue-500); font-weight: 800; }

@@ -1,58 +1,54 @@
-# Candidate 6 Design QA
+# 0.3.0 Eight-Screen Design QA
 
 ## Comparison Target
 
-- Source visual truth: `C:\Users\26288\.codex\generated_images\019f6a7c-0ab1-77c2-bd88-257537549cd9\exec-2a7c9ec4-9a80-45f8-98b6-b92d5cf13a65.png`
-- Implementation screenshots: `C:\Users\26288\.codex\visualizations\2026\07\16\019f6a7c-0ab1-77c2-bd88-257537549cd9\wechat-qa\01-login-fixed.png` through `08-about.png`
-- Full-view comparison evidence: `C:\Users\26288\.codex\visualizations\2026\07\16\019f6a7c-0ab1-77c2-bd88-257537549cd9\wechat-qa\candidate6-implementation-comparison.png`
-- Viewport: WeChat DevTools iPhone 12/13 simulator crop, 354 x 760 px per implementation screen.
-- State: local example pond with three records; local-only entry; no cloud write, upload, review submission, or release action.
+- Source visual truth: `C:\Users\26288\.codex\generated_images\019f4216-b404-7df3-a968-d8ccc35cc633\exec-3fa24e03-5890-43c7-9003-1f669bbf8884.png`
+- Required states: field home, overview home, unit list, cage form, cage detail, feed form, water/anomaly form, and records/data settings.
+- Viewport: WeChat DevTools iPhone 12/13 simulator, 488 x 941 screenshot pixels.
+- Final combined evidence: `qa-captures/design-vs-implementation-pass2.png`.
 
-## Findings
+## Final Findings
 
-- No actionable P0, P1, or P2 findings remain.
-- Fonts and typography: the implementation uses the existing PingFang SC / Source Han Sans SC / Microsoft YaHei stack. Weight, wrapping, hierarchy, and small-label readability are consistent across all eight screens. Native WeChat title text is expected to differ slightly from the generated phone mock.
-- Spacing and layout rhythm: cards, single-column forms, fixed save actions, bottom navigation, and danger-action placement preserve the selected hierarchy at the real simulator viewport. Long data/about pages intentionally scroll instead of compressing copy below a readable size.
-- Colors and visual tokens: deep green, pale green surfaces, blue water, purple medication, amber expense, and red danger states map consistently to the source direction and maintain clear semantic contrast.
-- Image quality and asset fidelity: the supplied brand emblem and generated pond landscape are sharp at rendered size, keep their intended crop, and are not replaced by CSS drawings or placeholders.
-- Icons: the final simulator evidence shows the icon-library glyphs on login, quick actions, records, about cards, and the three-tab navigation. No emoji, text-glyph substitute, handcrafted SVG, or placeholder icon remains.
-- Copy and content: real product terminology and current 0.2.6 / 0.2.7 version state are retained. Differences from the mock's sample names and values are intentional domain-data substitutions, not missing UI.
-
-## Focused Region Evidence
-
-Separate zoom crops were not required. The full-view comparison keeps every implementation screenshot at its native 354 x 760 resolution, and the eight individual PNG files were inspected at original resolution for typography, icon rendering, field alignment, bottom actions, and image sharpness.
+- No actionable P0, P1, or P2 visual findings remain.
+- Navigation: all eight states now use the selected five-column navigation. The raised center quick-record action remains stable and the active item matches each screen.
+- Typography and density: the Chinese hierarchy, medium-density rows, field labels, values, and section headings remain readable without clipping or overlap.
+- Layout: the two home modes, grouped unit list, medium-density cage form, five-tab detail, feed and water forms, and combined record/settings screen preserve the reference information order.
+- Actions: detail edit/record actions and record save/save-and-continue actions remain visible above the bottom navigation at the target viewport.
+- Colors: sea blue is the primary color; cyan/green communicate normal water and operating states; orange/red remain reserved for reminders and risk.
+- Assets: the cage artwork is a real transparent raster asset with a clean crop. No checkerboard, opaque placeholder, CSS drawing, emoji, or handcrafted SVG substitute is present.
+- Domain substitutions: counts, dates, alerts, and sample values come from deterministic QA data. They may differ from the illustrative mock while preserving the same component structure and hierarchy.
 
 ## Comparison History
 
-### Iteration 1 - blocked
+### Baseline - blocked
 
-- Earlier finding: `[P2] Icon components existed in the WXML but no glyphs rendered in the login button, eight home shortcuts, record rows, about cards, or bottom navigation.`
-- Root cause: `@taroify/icons` components were imported in TSX, but the package's global icon CSS was not imported by `src/app.scss`.
-- Fix: imported `@taroify/icons/index.css` globally in both mini-program source copies and rebuilt both production bundles.
-- Earlier visual evidence: `01-login.png` and `02-home.png` in the same `wechat-qa` directory.
+- The previous implementation used a different layout direction and had not captured all eight required states.
 
-### Iteration 2 - passed
+### Pass 1 - blocked
 
-- Post-fix evidence: `01-login-fixed.png`, `02-home-fixed.png`, `03-pond-detail.png`, `04-pond-form.png`, `05-record-form.png`, `06-records.png`, `07-data.png`, and `08-about.png`.
-- The rebuilt `app-origin.wxss` contains the `vant-icon` font-face and required glyph classes.
-- Login, home, pond detail, pond form, record form, records, data/settings, and about/product were all opened in the real WeChat simulator.
-- Primary interactions tested: local-only login entry, pond-card navigation, pond edit entry, record-form entry, bottom Records tab, bottom Data tab, and About entry.
-- Developer Tools Problems panel reported 0 workspace problems after compilation. The only startup timeout encountered belonged to a stale simulator session; stopping/recompiling the simulator restored the app without a source change.
+- Cage creation lacked visible dimensions and stocking quantity.
+- Feed and water core forms were too light and their row density did not match the selected medium-density form.
+- Cage detail displayed a pond-area value for a cage.
+- The old DevTools project loaded a stale bundle and the earlier cage image path.
 
-## Open Questions
+### Pass 2 - passed
 
-- None blocking. The generated mock uses illustrative business values and denser metric modules; the implementation intentionally preserves the current FarmState fields and real example data.
+- Rebuilt the eight selected states from a fresh temporary WeChat DevTools project.
+- Added cage dimensions and stocking quantity to the core form.
+- Converted the core record fields to medium-density single rows.
+- Corrected cage detail sizing and tightened its vertical rhythm so all nine summary rows remain available.
+- Kept detail and record-form primary actions visible above the five-column navigation.
+- Added the missing five-column navigation to the cage creation screen.
+- Replaced the stale/opaque cage image path with `src/assets/offshore-cage.png`.
 
-## Implementation Checklist
+## Evidence
 
-- [x] Candidate 6 resolved to the exact selected source image.
-- [x] Eight screens implemented and mirrored.
-- [x] Global icon styles loaded and verified in WeChat DevTools.
-- [x] Fixed navigation and fixed form actions remain visible at the simulator viewport.
-- [x] P0/P1/P2 findings cleared.
+- Individual screenshots: `qa-captures/pass2-01-home-field.png` through `qa-captures/pass2-08-records-settings.png`.
+- Eight-screen implementation sheet: `qa-captures/pass2-eight-screens.png`.
+- Same-input source comparison: `qa-captures/design-vs-implementation-pass2.png`.
 
-## Follow-up Polish
+## Follow-Up Polish
 
-- P3: a later visual-only iteration could make the home header and pond-detail metric summaries slightly closer to the mock's more compact density without changing domain behavior.
+- P3: later iterations may refine illustrative sample counts and alert copy without changing the approved layout or interaction model.
 
 final result: passed

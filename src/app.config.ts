@@ -1,6 +1,7 @@
 export default defineAppConfig({
   pages: [
     "pages/index/index",
+    "pages/units/index",
     "pages/pond-detail/index",
     "pages/pond-form/index",
     "pages/record-form/index",

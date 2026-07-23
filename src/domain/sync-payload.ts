@@ -7,7 +7,7 @@ export interface SyncSummary {
 }
 
 export interface SyncPushPayload extends SyncSummary {
-  protocolVersion: 2;
+  protocolVersion: 3;
   schemaVersion: 2;
   deviceId: string;
   baseRevision: number;
@@ -41,7 +41,7 @@ export function createSyncPushPayload(state: FarmState, deviceId: string, force 
   const ponds = state.ponds.map((pond) => stripOwner(pond as unknown as Record<string, unknown>) as unknown as Pond);
   const records = state.records.map((record) => stripOwner(record as unknown as Record<string, unknown>) as unknown as FarmRecord);
   return {
-    protocolVersion: 2,
+    protocolVersion: 3,
     schemaVersion: 2,
     deviceId,
     baseRevision: state.syncMeta.serverRevision,

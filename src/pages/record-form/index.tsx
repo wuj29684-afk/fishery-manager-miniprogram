@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Taro from "@tarojs/taro";
-import { Input, Picker, Text, Textarea, View } from "@tarojs/components";
+import { Image, Input, Picker, Text, Textarea, View } from "@tarojs/components";
 import { BagOutlined, BarChartOutlined, BulbOutlined, CouponOutlined, GoldCoinOutlined, RecordsOutlined, WarningOutlined } from "@taroify/icons";
+import AppTabBar from "../../components/AppTabBar";
 import { todayString } from "../../domain/format";
 import { labelForRecordType, parseOptionalNumber, parseRequiredNumber } from "../../domain/validation";
 import { hasActiveWithdrawal } from "../../domain/withdrawal";
 import { addRecord, deleteRecord, loadFarmState, updateRecord } from "../../storage/farm-store";
 import type { ExpenseCategory, FarmRecord, FarmRecordInput, Pond, RecordType } from "../../types";
+import cageArt from "../../assets/offshore-cage.png";
 import "./index.scss";
 
 const recordTypes: RecordType[] = ["feed", "water", "drug", "harvest", "sampling", "mortality", "expense"];
@@ -23,9 +25,10 @@ export default function RecordFormPage() {
   const [date, setDate] = useState(todayString());
   const [note, setNote] = useState("");
   const [values, setValues] = useState<Record<string, string>>({});
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(route().type === "water");
   const [saving, setSaving] = useState(false);
   const editing = Boolean(recordId);
+  const chooseType = !editing && !recordTypes.includes(route().type as RecordType);
 
   useEffect(() => {
     async function init() {
@@ -44,6 +47,7 @@ export default function RecordFormPage() {
 
   const pondNames = useMemo(() => ponds.map((pond) => pond.name), [ponds]);
   const pondIndex = Math.max(0, ponds.findIndex((pond) => pond.id === pondId));
+  const selectedPond = ponds[pondIndex];
   const set = (key: string, value: string) => setValues((current) => ({ ...current, [key]: value }));
   const required = (key: string, label: string, min = 0, max = Number.POSITIVE_INFINITY) => parseRequiredNumber(values[key] || "", label, min, max);
   const optional = (key: string, label: string, min = 0, max = Number.POSITIVE_INFINITY) => parseOptionalNumber(values[key] || "", label, min, max);
@@ -88,7 +92,7 @@ export default function RecordFormPage() {
 
   function fail(message: string): null { Taro.showToast({ title: message, icon: "none" }); return null; }
 
-  async function save() {
+  async function save(continueAfter = false) {
     if (saving) return;
     const input = buildInput(); if (!input) return;
     if (input.type === "harvest") {
@@ -99,7 +103,12 @@ export default function RecordFormPage() {
       }
     }
     setSaving(true);
-    try { if (editing) await updateRecord(recordId, input); else await addRecord(input); await Taro.showToast({ title: "保存成功", icon: "success" }); Taro.navigateBack(); }
+    try {
+      if (editing) await updateRecord(recordId, input); else await addRecord(input);
+      await Taro.showToast({ title: "保存成功", icon: "success" });
+      if (continueAfter && !editing) { setValues({}); setNote(""); }
+      else Taro.navigateBack();
+    }
     finally { setSaving(false); }
   }
 
@@ -110,32 +119,40 @@ export default function RecordFormPage() {
     await deleteRecord(recordId); await Taro.showToast({ title: "已删除", icon: "success" }); Taro.navigateBack();
   }
 
-  return <View className="form-page">
-    <View className="form-head"><Text className="title">{editing ? "编辑" : "新增"}{labelForRecordType(type)}记录</Text><Text className="subtitle">核心项优先，专业信息可按需展开。</Text></View>
-    {!editing && <View className="record-type-tabs">{recordTypes.map((item) => { const Icon = recordIcons[item]; return <View className={"type-tab " + (type === item ? "active" : "")} key={item} onClick={() => { setType(item); setValues({}); }}><Icon className="type-icon" size="22" /><Text>{labelForRecordType(item)}</Text></View>; })}</View>}
-    <Picker mode="selector" range={pondNames} value={pondIndex} onChange={(event) => setPondId(ponds[Number(event.detail.value)]?.id || "")}><View className="pond-picker"><Text className="label">塘口</Text><Text className="picker-value">{ponds[pondIndex]?.name || "暂无可用塘口"}</Text></View></Picker>
-    <Picker mode="date" value={date} onChange={(event) => setDate(event.detail.value)}><View className="field"><Text className="label">记录日期</Text><Text className="picker-value">{date}</Text></View></Picker>
-    <CoreFields type={type} values={values} set={set} />
+  return <View className="form-page safe-tab-page">
+    <View className="form-head"><Text className="title">{editing ? `编辑${labelForRecordType(type)}` : `记${labelForRecordType(type)}`}</Text></View>
+    {chooseType && <View className="record-type-tabs">{recordTypes.map((item) => { const Icon = recordIcons[item]; return <View className={"type-tab " + (type === item ? "active" : "")} key={item} onClick={() => { setType(item); setValues({}); }}><Icon className="type-icon" size="22" /><Text>{labelForRecordType(item)}</Text></View>; })}</View>}
+    {(type === "water" || type === "mortality") && <View className="record-mode-tabs"><Text className={type === "water" ? "active" : ""} onClick={() => { setType("water"); setExpanded(true); setValues({}); }}>记水质</Text><Text className={type === "mortality" ? "active" : ""} onClick={() => { setType("mortality"); setExpanded(true); setValues({}); }}>记异常</Text></View>}
+    <Picker mode="selector" range={pondNames} value={pondIndex} onChange={(event) => setPondId(ponds[Number(event.detail.value)]?.id || "")}><View className="pond-picker unit-picker"><Text className="label">养殖单元</Text><Text className="picker-value">{ponds[pondIndex]?.name || "暂无可用养殖单元"}</Text></View></Picker>
+    {selectedPond && <View className={`form-unit-preview ${selectedPond.unitType === "cage" ? "preview-cage" : "preview-pond"}`}><Image src={cageArt} mode="aspectFit" /><View><Text className="preview-name">{selectedPond.name}</Text><Text className="preview-meta">{selectedPond.species} · {selectedPond.unitType === "cage" ? "网箱" : "塘口"}</Text></View></View>}
+    <Text className="form-section-title">{type === "water" ? "水质参数" : "记录信息"}</Text>
+    <View className="field-section"><Picker mode="date" value={date} onChange={(event) => setDate(event.detail.value)}><View className="field"><Text className="label">记录日期</Text><Text className="picker-value">{date}</Text></View></Picker>
+    <CoreFields type={type} values={values} set={set} /></View>
     <Text className="expand-button" onClick={() => setExpanded(!expanded)}>{expanded ? "收起专业信息" : "补充专业信息"}</Text>
-    {expanded && <ExtraFields type={type} values={values} set={set} />}
-    <View className="field"><Text className="label">备注</Text><Textarea className="textarea" value={note} placeholder="补充现场情况" onInput={(event) => setNote(event.detail.value)} /></View>
+    {expanded && <View className="field-section extra-section"><ExtraFields type={type} values={values} set={set} /></View>}
+    <View className="field note-field"><Text className="label">备注</Text><Textarea className="textarea" value={note} placeholder="选填" onInput={(event) => setNote(event.detail.value)} /></View>
     <Text className="hint">数据默认保存在本机；仅在用户主动操作时同步到当前微信账号。</Text>
-    <Text className="save-button" onClick={save}>{saving ? "保存中..." : "保存记录"}</Text>
-    {editing && <Text className="delete-button" onClick={remove}>删除记录</Text>}
+    <View className="form-actions">
+      <Text className="save-button" onClick={() => save(false)}>{saving ? "保存中..." : "保存"}</Text>
+      {!editing && <Text className="continue-button" onClick={() => save(true)}>保存并继续</Text>}
+      {editing && <Text className="delete-button" onClick={remove}>删除记录</Text>}
+    </View>
+    <AppTabBar active="quick" />
   </View>;
 }
 
 function CoreFields({ type, values, set }: FieldGroupProps) {
-  if (type === "feed" || type === "harvest") return <Row><Field label="重量（kg）" value={values.weightKg} placeholder="120" type="digit" onInput={(v) => set("weightKg", v)} /><Field label="单价（元）" value={values.unitPriceYuan} placeholder="8.5" type="digit" onInput={(v) => set("unitPriceYuan", v)} /></Row>;
-  if (type === "water") return <><Row><Field label="pH" value={values.ph} placeholder="8.2" type="digit" onInput={(v) => set("ph", v)} /><Field label="溶氧 mg/L" value={values.dissolvedOxygen} placeholder="5.0" type="digit" onInput={(v) => set("dissolvedOxygen", v)} /></Row><Field label="氨氮 mg/L" value={values.ammoniaNitrogen} placeholder="0.2" type="digit" onInput={(v) => set("ammoniaNitrogen", v)} /></>;
-  if (type === "drug") return <><Field label="药品名称" value={values.drugName} placeholder="例如 底改片" onInput={(v) => set("drugName", v)} /><Row><Field label="剂量" value={values.dosage} placeholder="2 袋" onInput={(v) => set("dosage", v)} /><Field label="休药期（天）" value={values.withdrawalDays} placeholder="7" type="number" onInput={(v) => set("withdrawalDays", v)} /></Row></>;
-  if (type === "sampling") return <Row><Field label="抽样数量（尾）" value={values.sampleCount} placeholder="30" type="number" onInput={(v) => set("sampleCount", v)} /><Field label="平均重量（克/尾）" value={values.averageWeightG} placeholder="12.5" type="digit" onInput={(v) => set("averageWeightG", v)} /></Row>;
+  if (type === "feed") return <><Field label="投喂饲料" value={values.feedName} placeholder="例如 海鲈配合饲料" onInput={(v) => set("feedName", v)} /><Field label="投喂量（kg）" value={values.weightKg} placeholder="120" type="digit" onInput={(v) => set("weightKg", v)} /><Field label="单价（元/kg）" value={values.unitPriceYuan} placeholder="8.5" type="digit" onInput={(v) => set("unitPriceYuan", v)} /></>;
+  if (type === "harvest") return <><Field label="收获重量（kg）" value={values.weightKg} placeholder="120" type="digit" onInput={(v) => set("weightKg", v)} /><Field label="售价（元/kg）" value={values.unitPriceYuan} placeholder="8.5" type="digit" onInput={(v) => set("unitPriceYuan", v)} /></>;
+  if (type === "water") return <><Field label="pH" value={values.ph} placeholder="8.2" type="digit" onInput={(v) => set("ph", v)} /><Field label="溶氧（mg/L）" value={values.dissolvedOxygen} placeholder="5.0" type="digit" onInput={(v) => set("dissolvedOxygen", v)} /><Field label="氨氮（mg/L）" value={values.ammoniaNitrogen} placeholder="0.2" type="digit" onInput={(v) => set("ammoniaNitrogen", v)} /></>;
+  if (type === "drug") return <><Field label="药品名称" value={values.drugName} placeholder="例如 底改片" onInput={(v) => set("drugName", v)} /><Field label="剂量" value={values.dosage} placeholder="2 袋" onInput={(v) => set("dosage", v)} /><Field label="休药期（天）" value={values.withdrawalDays} placeholder="7" type="number" onInput={(v) => set("withdrawalDays", v)} /></>;
+  if (type === "sampling") return <><Field label="抽样数量（尾）" value={values.sampleCount} placeholder="30" type="number" onInput={(v) => set("sampleCount", v)} /><Field label="平均重量（克/尾）" value={values.averageWeightG} placeholder="12.5" type="digit" onInput={(v) => set("averageWeightG", v)} /></>;
   if (type === "mortality") return <Field label="死亡数量（尾）" value={values.count} placeholder="3" type="number" onInput={(v) => set("count", v)} />;
   return <><Field label="支出项目" value={values.itemName} placeholder="例如 本月电费" onInput={(v) => set("itemName", v)} /><Field label="金额（元）" value={values.amountYuan} placeholder="1200" type="digit" onInput={(v) => set("amountYuan", v)} /><Picker mode="selector" range={expenseLabels} value={Math.max(0, expenseCategories.indexOf(values.category as ExpenseCategory))} onChange={(event) => set("category", expenseCategories[Number(event.detail.value)])}><View className="pond-picker"><Text className="label">支出分类</Text><Text className="picker-value">{expenseLabels[Math.max(0, expenseCategories.indexOf(values.category as ExpenseCategory))]}</Text></View></Picker></>;
 }
 
 function ExtraFields({ type, values, set }: FieldGroupProps) {
-  if (type === "feed") return <><Row><Field label="饲料名称" value={values.feedName} placeholder="配合饲料" onInput={(v) => set("feedName", v)} /><Field label="饲料批次" value={values.feedBatch} placeholder="批次号" onInput={(v) => set("feedBatch", v)} /></Row><Row><Field label="餐次" value={values.meal} placeholder="早/中/晚" onInput={(v) => set("meal", v)} /><Field label="计划量（kg）" value={values.plannedWeightKg} placeholder="120" type="digit" onInput={(v) => set("plannedWeightKg", v)} /></Row><Field label="摄食与剩料" value={values.leftover} placeholder="摄食正常，无明显剩料" onInput={(v) => set("leftover", v)} /></>;
+  if (type === "feed") return <><Field label="饲料批次" value={values.feedBatch} placeholder="批次号" onInput={(v) => set("feedBatch", v)} /><Row><Field label="餐次" value={values.meal} placeholder="早/中/晚" onInput={(v) => set("meal", v)} /><Field label="计划量（kg）" value={values.plannedWeightKg} placeholder="120" type="digit" onInput={(v) => set("plannedWeightKg", v)} /></Row><Field label="摄食与剩料" value={values.leftover} placeholder="摄食正常，无明显剩料" onInput={(v) => set("leftover", v)} /></>;
   if (type === "water") return <><Row><Field label="检测时间" value={values.measuredAt} placeholder="06:30" onInput={(v) => set("measuredAt", v)} /><Field label="水温 ℃" value={values.temperature} placeholder="28" type="digit" onInput={(v) => set("temperature", v)} /></Row><Row><Field label="亚硝酸盐" value={values.nitrite} placeholder="0.1" type="digit" onInput={(v) => set("nitrite", v)} /><Field label="盐度" value={values.salinity} placeholder="15" type="digit" onInput={(v) => set("salinity", v)} /></Row><Row><Field label="透明度 cm" value={values.transparencyCm} placeholder="35" type="digit" onInput={(v) => set("transparencyCm", v)} /><Field label="总碱度" value={values.alkalinity} placeholder="120" type="digit" onInput={(v) => set("alkalinity", v)} /></Row></>;
   if (type === "drug") return <><Field label="用药原因" value={values.reason} placeholder="记录症状或处理目的" onInput={(v) => set("reason", v)} /><Row><Field label="有效成分" value={values.activeIngredient} placeholder="有效成分" onInput={(v) => set("activeIngredient", v)} /><Field label="使用方式" value={values.method} placeholder="泼洒/拌料" onInput={(v) => set("method", v)} /></Row><Row><Field label="操作人" value={values.operator} placeholder="姓名" onInput={(v) => set("operator", v)} /><Field label="药品成本（元）" value={values.costYuan} placeholder="120" type="digit" onInput={(v) => set("costYuan", v)} /></Row></>;
   if (type === "harvest") return <Row><Field label="规格" value={values.sizeSpec} placeholder="30尾/斤" onInput={(v) => set("sizeSpec", v)} /><Field label="销售对象" value={values.buyer} placeholder="收购商" onInput={(v) => set("buyer", v)} /></Row>;

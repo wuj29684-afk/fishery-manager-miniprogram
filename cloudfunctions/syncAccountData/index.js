@@ -14,7 +14,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const REQUIRED_COLLECTIONS = ["ponds", "records", "sync_revisions"];
 const PAGE_SIZE = 100;
 const MAX_ITEMS = 5000;
-const CURRENT_DATA_EPOCH = 2;
+const CURRENT_DATA_EPOCH = 3;
 
 function stripOwner(item) {
   const { ownerUserId, ...rest } = item || {};
@@ -50,13 +50,13 @@ function normalizePayload(payload = {}) {
   const ponds = Array.isArray(payload.ponds) ? payload.ponds.map(stripOwner) : [];
   const records = Array.isArray(payload.records) ? payload.records.map(stripOwner) : [];
   if (ponds.length > MAX_ITEMS || records.length > MAX_ITEMS) throw new Error("sync payload too large");
-  if (payload.protocolVersion === 2) {
+  if (payload.protocolVersion === 2 || payload.protocolVersion === 3) {
     if (payload.schemaVersion !== 2) throw new Error("unsupported schema version");
     if (payload.pondCount !== ponds.length || payload.recordCount !== records.length) throw new Error("sync count mismatch");
     if (payload.checksum !== checksum(ponds, records)) throw new Error("sync checksum mismatch");
   }
   return {
-    protocolVersion: payload.protocolVersion === 2 ? 2 : 1,
+    protocolVersion: payload.protocolVersion === 3 ? 3 : payload.protocolVersion === 2 ? 2 : 1,
     schemaVersion: payload.schemaVersion === 2 ? 2 : 1,
     deviceId: String(payload.deviceId || ""),
     baseRevision: Number(payload.baseRevision || 0),
@@ -105,7 +105,7 @@ async function pullOwnedState(db, openid, dataEpoch = CURRENT_DATA_EPOCH) {
   const ponds = pondDocs.map((item) => item.payload);
   const records = recordDocs.map((item) => item.payload);
   return {
-    protocolVersion: 2,
+    protocolVersion: dataEpoch === 3 ? 3 : 2,
     schemaVersion: 2,
     serverRevision,
     syncedAt: new Date().toISOString(),
@@ -136,9 +136,9 @@ async function setCompatibleDoc(collection, id, data, legacy) {
 
 async function pushOwnedState(db, openid, rawPayload) {
   const payload = normalizePayload(rawPayload);
-  const dataEpoch = payload.protocolVersion === 2 ? CURRENT_DATA_EPOCH : null;
+  const dataEpoch = payload.protocolVersion === 3 ? CURRENT_DATA_EPOCH : payload.protocolVersion === 2 ? 2 : null;
   const currentRevision = await getRevision(db, openid, dataEpoch);
-  if (payload.protocolVersion === 2 && !payload.force && payload.baseRevision !== currentRevision) {
+  if ((payload.protocolVersion === 2 || payload.protocolVersion === 3) && !payload.force && payload.baseRevision !== currentRevision) {
     const current = await pullOwnedState(db, openid, dataEpoch);
     return { ...current, conflict: true };
   }
@@ -194,7 +194,7 @@ async function main(event, _context, deps = {}) {
     await ensureCollections(db);
     return pushOwnedState(db, openid, event.payload);
   }
-  if (event.action === "pull") return pullOwnedState(db, openid, event.protocolVersion === 2 ? CURRENT_DATA_EPOCH : null);
+  if (event.action === "pull") return pullOwnedState(db, openid, event.protocolVersion === 3 ? CURRENT_DATA_EPOCH : event.protocolVersion === 2 ? 2 : null);
   throw new Error("unsupported action");
 }
 

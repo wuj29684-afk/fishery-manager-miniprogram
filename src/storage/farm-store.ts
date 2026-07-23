@@ -3,13 +3,13 @@ import { createEmptyFarmState, migrateFarmState } from "../domain/farm-state";
 import { createId } from "../domain/id";
 import { validateFarmState } from "../domain/state-validation";
 import { addDaysToDate } from "../domain/withdrawal";
-import type { FarmRecord, FarmRecordInput, FarmState, Pond } from "../types";
+import type { AccentMode, FarmRecord, FarmRecordInput, FarmState, HomeView, Pond } from "../types";
 
 const STORAGE_KEY = "fishery-manager:farm-state:v1";
 const MIGRATION_BACKUP_KEY = "fishery-manager:farm-state:v1:migration-backup";
 const RECOVERY_KEY = "fishery-manager:farm-state:v2:recovery";
 const DATA_EPOCH_KEY = "fishery-manager:data-epoch:v1";
-const CURRENT_DATA_EPOCH = "2";
+const CURRENT_DATA_EPOCH = "3";
 const DEMO_POND_IDS = ["pond-1", "pond-2"];
 const DEMO_RECORD_IDS = ["record-feed-1", "record-water-1", "record-drug-1", "record-harvest-1"];
 const EXPERIENCE_POND_ID = "experience-pond-shrimp";
@@ -69,6 +69,7 @@ export async function loadExperienceExample(): Promise<FarmState> {
   const pondId = EXPERIENCE_POND_ID;
   const pond: Pond = {
     id: pondId,
+    unitType: "pond",
     name: "示例对虾塘",
     species: "南美白对虾",
     location: "体验示例",
@@ -164,6 +165,20 @@ export async function deletePond(pondId: string): Promise<FarmState> {
 export async function setSelectedPond(pondId: string): Promise<FarmState> {
   const state = await loadFarmState();
   const next = { ...state, settings: { ...state.settings, selectedPondId: pondId } };
+  saveFarmState(next);
+  return next;
+}
+
+export async function setHomeView(homeView: HomeView): Promise<FarmState> {
+  const state = await loadFarmState();
+  const next = { ...state, settings: { ...state.settings, homeView } };
+  saveFarmState(next);
+  return next;
+}
+
+export async function setAccentMode(accentMode: AccentMode): Promise<FarmState> {
+  const state = await loadFarmState();
+  const next = { ...state, settings: { ...state.settings, accentMode } };
   saveFarmState(next);
   return next;
 }

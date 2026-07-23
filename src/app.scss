@@ -2,19 +2,21 @@
 
 page {
   min-height: 100%;
-  --fm-green-900: #0a3f2b;
-  --fm-green-700: #0b6b45;
-  --fm-green-500: #26905f;
-  --fm-blue-500: #2687c8;
+  --fm-green-900: #087b70;
+  --fm-green-700: #16825e;
+  --fm-green-500: #2ba978;
+  --fm-blue-500: #0874d9;
+  --fm-blue-700: #0758b8;
+  --fm-cyan-500: #27b7c4;
   --fm-amber-500: #ef9417;
   --fm-red-500: #d8473f;
-  --fm-bg: #f4f7f2;
+  --fm-bg: #f6f8fb;
   --fm-card: #ffffff;
-  --fm-line: #e1e8e2;
-  --fm-text: #17251d;
-  --fm-muted: #6f7d75;
-  --fm-radius-card: 16px;
-  --fm-radius-control: 12px;
+  --fm-line: #e4e9ee;
+  --fm-text: #17212b;
+  --fm-muted: #6d7884;
+  --fm-radius-card: 8px;
+  --fm-radius-control: 8px;
   background: var(--fm-bg);
   color: var(--fm-text);
   font-family: "PingFang SC", "Source Han Sans SC", "Microsoft YaHei", sans-serif;
@@ -26,5 +28,5 @@ text {
 }
 
 .safe-tab-page {
-  padding-bottom: calc(132px + env(safe-area-inset-bottom));
+  padding-bottom: calc(120px + env(safe-area-inset-bottom));
 }

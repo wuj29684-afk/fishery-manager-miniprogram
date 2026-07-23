@@ -1,14 +1,31 @@
-.form-page { min-height: 100vh; padding: 24px 24px calc(130px + env(safe-area-inset-bottom)); background: var(--fm-bg); }
-.form-head { margin-bottom: 18px; }
-.title { display: block; color: var(--fm-text); font-size: 36px; font-weight: 800; }
-.subtitle, .hint { display: block; margin-top: 7px; color: var(--fm-muted); font-size: 20px; line-height: 1.5; }
-.field-row { display: block; }
-.field, .pond-picker { padding: 17px 18px; margin-bottom: 10px; border: 1px solid var(--fm-line); border-radius: var(--fm-radius-control); background: #fff; }
-.compact { width: auto; }
-.label { display: block; margin-bottom: 8px; color: #526158; font-size: 20px; font-weight: 700; }
-.input { min-height: 46px; color: var(--fm-text); font-size: 25px; }
-.picker-value { display: block; min-height: 46px; color: var(--fm-text); font-size: 24px; line-height: 46px; }
-.picker-value.placeholder { color: #a3aca6; }
-.advanced-toggle { display: flex; align-items: center; justify-content: space-between; padding: 18px; margin: 10px 0; border: 1px solid var(--fm-line); border-radius: var(--fm-radius-control); background: #fff; color: #53645a; font-size: 21px; }
-.advanced-fields { padding-top: 2px; }
-.save-button { position: fixed; z-index: 20; right: 24px; bottom: calc(24px + env(safe-area-inset-bottom)); left: 24px; display: block; padding: 20px; border-radius: var(--fm-radius-control); background: var(--fm-green-700); color: #fff; font-size: 27px; font-weight: 800; text-align: center; box-shadow: 0 10px 24px rgba(11,107,69,.22); }
+.form-page { min-height: 100vh; padding: 22px 22px 52px; background: var(--fm-bg); }
+.form-head { margin-bottom: 17px; }
+.title { display: block; color: var(--fm-text); font-size: 40px; font-weight: 800; }
+.subtitle, .hint { display: block; margin-top: 7px; color: var(--fm-muted); font-size: 27px; line-height: 1.5; }
+.form-section-title { display: block; margin: 22px 2px 12px; color: var(--fm-text); font-size: 30px; font-weight: 800; }
+.unit-type-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 7px; border: 1px solid var(--fm-line); border-radius: 8px; background: #fff; }
+.unit-type-tabs text { display: block; padding: 18px; border: 1px solid transparent; border-radius: 7px; color: var(--fm-muted); font-size: 29px; font-weight: 700; text-align: center; }
+.unit-type-tabs text.active { border-color: #b9daf7; background: #edf6ff; color: var(--fm-blue-700); }
+.form-section { overflow: hidden; border: 1px solid var(--fm-line); border-radius: 8px; background: #fff; }
+.field, .pond-picker { display: flex; min-height: 104px; align-items: center; gap: 16px; padding: 0 22px; border-bottom: 1px solid var(--fm-line); background: #fff; }
+.form-section > .field:last-child, .form-section > picker:last-child .field, .form-section > picker:last-child .pond-picker { border-bottom: 0; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; }
+.field-row .field { min-width: 0; border-right: 1px solid var(--fm-line); }
+.field-row .field:last-child { border-right: 0; }
+.label { flex-shrink: 0; color: #3e4b58; font-size: 29px; font-weight: 700; }
+.input { min-width: 0; min-height: 82px; flex: 1; color: var(--fm-text); font-size: 30px; text-align: right; }
+.picker-value { min-width: 0; flex: 1; color: var(--fm-text); font-size: 30px; text-align: right; }
+.picker-value.placeholder { color: #a0a9b2; }
+.dimension-field { justify-content: space-between; }
+.dimension-inputs { display: flex; min-width: 0; flex: 1; align-items: center; justify-content: flex-end; gap: 8px; color: var(--fm-muted); font-size: 27px; }
+.dimension-input { width: 72px; min-height: 82px; color: var(--fm-text); font-size: 30px; text-align: center; }
+.advanced-toggle { display: flex; min-height: 92px; align-items: center; justify-content: space-between; padding: 18px 22px; margin: 16px 0 0; border: 1px solid var(--fm-line); border-radius: 8px; background: #fff; color: var(--fm-blue-500); font-size: 28px; }
+.advanced-title, .advanced-copy { display: block; }
+.advanced-title { color: var(--fm-text); font-size: 28px; font-weight: 800; }
+.advanced-copy { margin-top: 4px; color: var(--fm-muted); font-size: 23px; }
+.threshold-toggle { margin-top: 12px; color: var(--fm-muted); }
+.threshold-fields { margin-top: 8px; }
+.hint { margin: 12px 2px 0; }
+.save-button, .cancel-button { display: block; padding: 22px; border-radius: 8px; font-size: 32px; font-weight: 800; text-align: center; }
+.save-button { margin-top: 22px; background: var(--fm-blue-500); color: #fff; }
+.cancel-button { margin-top: 8px; color: #526273; }

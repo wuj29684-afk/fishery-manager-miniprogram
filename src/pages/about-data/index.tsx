@@ -3,7 +3,10 @@ import { BarChartOutlined, BulbOutlined, RecordsOutlined, ShieldOutlined } from 
 import type { ReactNode } from "react";
 import brandEmblem from "../../assets/brand-emblem.png";
 import pondLandscape from "../../assets/pond-landscape.jpg";
+import packageMeta from "../../../package.json";
 import "./index.scss";
+
+const APP_VERSION = packageMeta.version;
 
 const summaryCards = [
   {
@@ -13,15 +16,15 @@ const summaryCards = [
     Icon: ShieldOutlined
   },
   {
-    label: "版本状态",
-    value: "0.2.9 审核修复版",
-    detail: "线上正式版为 0.2.6；当前 0.2.9 已改为先浏览、后主动同步，尚待上传。",
+    label: "当前版本",
+    value: `v${APP_VERSION}`,
+    detail: "版本号从程序包自动读取，并由发布前检查保证一致。",
     Icon: BulbOutlined
   },
   {
     label: "能力范围",
-    value: "塘口 + 记录 + 备份",
-    detail: "支持塘口、七类记录、预警、经营汇总、备份和恢复。",
+    value: "塘口 + 网箱 + 记录",
+    detail: "支持养殖单元、七类记录、预警、经营汇总、备份和恢复。",
     Icon: RecordsOutlined
   },
   {
@@ -33,10 +36,11 @@ const summaryCards = [
 ];
 
 const featureItems = [
-  "塘口创建、编辑、停用和详情查看。",
+  "塘口与网箱创建、编辑、停用、永久删除和详情查看。",
   "投料、水质、用药、收获、抽样、死亡、经营支出七类记录。",
   "记录编辑、删除和二次确认。",
-  "首页塘口搜索、状态筛选和经营指标汇总。",
+  "现场值守与经营概览双模式首页。",
+  "养殖单元搜索、状态筛选和经营指标汇总。",
   "JSON 备份复制、JSON 导入恢复和 CSV 记录导出。"
 ];
 
@@ -53,9 +57,9 @@ const boundaryItems = [
 const reviewPath = ["首页", "体验示例或创建塘口", "快速记录", "塘口详情", "数据与设置", "关于与数据"];
 
 const roadmapItems = [
-  "继续完善隐私政策、用户协议、服务类目和审核截图素材，使说明与云同步能力保持一致。",
-  "发布前继续复核隐私政策、用户协议、服务类目和审核截图素材。",
-  "异常提醒、数据模型升级和多设备同步体验会在正式确认后分阶段推进。",
+  "继续优化塘口与网箱现场记录效率，保持功能专业但操作简单。",
+  "发布前复核隐私政策、用户协议、服务类目和审核截图素材。",
+  "根据真实养殖户反馈逐步完善预警、经营分析和多设备同步体验。",
   "正式接入服务端时，AppSecret 仍只放在服务端，不进入小程序代码、配置或日志。"
 ];
 
@@ -89,7 +93,7 @@ export default function AboutDataPage() {
 
       <InfoSection title="产品定位">
         <Text className="section-copy">
-          渔儿小助手当前定位为一线塘口经营值班台，帮助现场快速记录、查看塘口状态和复盘经营数据。
+          渔儿小助手面向拥有 1-5 个塘口或网箱的单人、家庭式养殖户，帮助现场快速记录、查看养殖状态和复盘经营数据。
         </Text>
       </InfoSection>
 
@@ -113,9 +117,9 @@ export default function AboutDataPage() {
         ))}
       </InfoSection>
 
-      <InfoSection title="线上版说明">
+      <InfoSection title="版本说明">
         <Text className="section-copy">
-          当前线上正式版为 0.2.6；0.2.9 审核修复版已改为首屏免登录浏览，尚待上传和重新提交审核。
+          当前安装版本为 v{APP_VERSION}。版本更新不会改变本机优先、用户主动同步的数据边界。
         </Text>
       </InfoSection>
 

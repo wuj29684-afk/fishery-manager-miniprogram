@@ -1,8 +1,11 @@
 export type RecordType = "feed" | "water" | "drug" | "harvest" | "sampling" | "mortality" | "expense";
 export type PondStatus = "active" | "inactive";
-export type AlertProfileId = "shrimp" | "tilapia" | "general";
+export type FarmUnitType = "pond" | "cage";
+export type AlertProfileId = "shrimp" | "tilapia" | "cageFish" | "general";
 export type AlertSeverity = "low" | "medium" | "high";
 export type SyncStatus = "local" | "checking" | "synced" | "conflict" | "error";
+export type HomeView = "field" | "overview";
+export type AccentMode = "auto" | "land" | "ocean";
 
 export interface WaterThresholds {
   phMin: number;
@@ -18,10 +21,15 @@ export interface WaterThresholds {
 
 export interface Pond {
   id: string;
+  unitType: FarmUnitType;
   name: string;
   species: string;
   location: string;
   areaMu: number;
+  cageLengthM?: number;
+  cageWidthM?: number;
+  cageDepthM?: number;
+  cageSpecification?: string;
   status: PondStatus;
   stockingDate?: string;
   stockingQuantity?: number;
@@ -127,11 +135,13 @@ export type FarmRecordInput =
 
 export interface FarmSettings {
   selectedPondId: string;
+  homeView: HomeView;
+  accentMode: AccentMode;
   customProfileThresholds: Partial<Record<AlertProfileId, Partial<WaterThresholds>>>;
 }
 
 export interface SyncMeta {
-  protocolVersion: 2;
+  protocolVersion: 3;
   serverRevision: number;
   lastSyncedAt: string;
   deviceId: string;

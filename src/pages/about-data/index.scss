@@ -1,11 +1,11 @@
 .about-page { min-height: 100vh; padding: 24px; overflow: hidden; background: var(--fm-bg); }
 .about-head { display: flex; align-items: center; gap: 18px; padding: 20px; margin-bottom: 14px; border: 1px solid var(--fm-line); border-radius: var(--fm-radius-card); background: #fff; }
 .about-emblem { flex-shrink: 0; width: 112px; height: 112px; border-radius: 50%; }
-.title { display: block; color: var(--fm-green-700); font-size: 32px; font-weight: 800; }
+.title { display: block; color: var(--fm-blue-500); font-size: 32px; font-weight: 800; }
 .subtitle, .section-copy, .summary-detail, .boundary-copy, .list-row { display: block; margin-top: 6px; color: var(--fm-muted); font-size: 20px; line-height: 1.5; }
 .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
 .summary-card { min-height: 174px; padding: 18px; border: 1px solid var(--fm-line); border-radius: 13px; background: #fff; }
-.summary-icon { color: var(--fm-green-700); }
+.summary-icon { color: var(--fm-blue-500); }
 .summary-label { display: block; margin-top: 8px; color: #77847c; font-size: 18px; }
 .summary-value { display: block; margin-top: 6px; color: var(--fm-text); font-size: 23px; font-weight: 800; line-height: 1.3; }
 .summary-detail { font-size: 18px; }
@@ -13,8 +13,8 @@
 .section-title { display: block; color: var(--fm-text); font-size: 27px; font-weight: 800; }
 .list-row { padding: 13px 0; border-bottom: 1px solid #edf1ed; }
 .list-row:last-child { border-bottom: 0; }
-.boundary-box { padding: 16px; margin-top: 12px; border-radius: 11px; background: #edf7f0; }
-.boundary-title { display: block; color: var(--fm-green-700); font-size: 23px; font-weight: 800; }
+.boundary-box { padding: 16px; margin-top: 12px; border-radius: 8px; background: #eef7ff; }
+.boundary-title { display: block; color: var(--fm-blue-500); font-size: 23px; font-weight: 800; }
 .path-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.path-item { display: block; padding: 9px 11px; border-radius: 8px; background: #f2f6f3; color: #42604e; font-size: 18px; }
+.path-item { display: block; padding: 9px 11px; border-radius: 8px; background: #f4f8fc; color: #315b7c; font-size: 18px; }
 .about-landscape { width: calc(100% + 48px); height: 240px; margin: 0 -24px -24px; }

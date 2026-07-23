@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: "新增记录"
+  navigationBarTitleText: "渔儿小助手"
 });

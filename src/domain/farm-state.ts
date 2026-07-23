@@ -13,9 +13,9 @@ export function createEmptyFarmState(now = new Date().toISOString(), deviceId = 
     version: 2,
     ponds: [],
     records: [],
-    settings: { selectedPondId: "", customProfileThresholds: {} },
+    settings: { selectedPondId: "", homeView: "field", accentMode: "auto", customProfileThresholds: {} },
     syncMeta: {
-      protocolVersion: 2,
+      protocolVersion: 3,
       serverRevision: 0,
       lastSyncedAt: "",
       deviceId,
@@ -33,10 +33,15 @@ function migratePond(value: UnknownObject): Pond {
   const legacyDay = typeof value.day === "number" ? value.day : undefined;
   return {
     id: String(value.id || ""),
+    unitType: value.unitType === "cage" ? "cage" : "pond",
     name: String(value.name || ""),
     species: String(value.species || ""),
     location: String(value.location || ""),
     areaMu: Number(value.areaMu || 0),
+    cageLengthM: typeof value.cageLengthM === "number" ? value.cageLengthM : undefined,
+    cageWidthM: typeof value.cageWidthM === "number" ? value.cageWidthM : undefined,
+    cageDepthM: typeof value.cageDepthM === "number" ? value.cageDepthM : undefined,
+    cageSpecification: typeof value.cageSpecification === "string" ? value.cageSpecification : undefined,
     status: value.status === "inactive" ? "inactive" : "active",
     stockingDate,
     stockingQuantity: typeof value.stockingQuantity === "number" ? value.stockingQuantity : undefined,
@@ -45,7 +50,7 @@ function migratePond(value: UnknownObject): Pond {
     alertProfileId:
       value.alertProfileId === "shrimp" || value.alertProfileId === "tilapia" || value.alertProfileId === "general"
         ? value.alertProfileId
-        : inferAlertProfile(String(value.species || "")),
+        : inferAlertProfile(String(value.species || ""), value.unitType === "cage" ? "cage" : "pond"),
     customThresholds: isObject(value.customThresholds) ? value.customThresholds : undefined,
     targetHarvestDate: typeof value.targetHarvestDate === "string" ? value.targetHarvestDate : undefined,
     legacyStockingDays: typeof value.legacyStockingDays === "number" ? value.legacyStockingDays : legacyDay,
@@ -91,12 +96,14 @@ export function migrateFarmState(value: unknown, now = new Date().toISOString())
     records,
     settings: {
       selectedPondId: typeof settings.selectedPondId === "string" ? settings.selectedPondId : ponds[0]?.id || "",
+      homeView: settings.homeView === "overview" ? "overview" : "field",
+      accentMode: settings.accentMode === "land" || settings.accentMode === "ocean" ? settings.accentMode : "auto",
       customProfileThresholds: isObject(settings.customProfileThresholds) ? settings.customProfileThresholds : {}
     },
     syncMeta: {
       ...base.syncMeta,
       ...syncMeta,
-      protocolVersion: 2,
+      protocolVersion: 3,
       serverRevision: Number(syncMeta.serverRevision || 0),
       deletedPondIds: Array.isArray(syncMeta.deletedPondIds) ? syncMeta.deletedPondIds.map(String) : [],
       deletedRecordIds: Array.isArray(syncMeta.deletedRecordIds) ? syncMeta.deletedRecordIds.map(String) : []

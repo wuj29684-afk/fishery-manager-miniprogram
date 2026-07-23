@@ -30,9 +30,9 @@ export function createLocalStateFromPullResult(result: PulledSyncState, local?: 
     version: 2,
     ponds,
     records,
-    settings: local?.settings || { selectedPondId: ponds[0]?.id || "", customProfileThresholds: {} },
+    settings: local?.settings || { selectedPondId: ponds[0]?.id || "", homeView: "field", accentMode: "auto", customProfileThresholds: {} },
     syncMeta: {
-      protocolVersion: 2,
+      protocolVersion: 3,
       serverRevision: result.serverRevision,
       lastSyncedAt: result.syncedAt || new Date().toISOString(),
       deviceId: local?.syncMeta.deviceId || "",

@@ -7,11 +7,16 @@ import { createJsonBackup, createRecordsCsv, parseJsonBackup } from "../../domai
 import { createId } from "../../domain/id";
 import { createLocalStateFromPullResult } from "../../domain/sync-state";
 import { getAccountSyncStatusText, pullAccountState, pushAccountState } from "../../services/account-sync-service";
-import { hasExperienceExample, loadExperienceExample, loadFarmState, saveFarmState, saveRecoveryPoint } from "../../storage/farm-store";
-import type { FarmState } from "../../types";
+import { hasExperienceExample, loadExperienceExample, loadFarmState, saveFarmState, saveRecoveryPoint, setAccentMode } from "../../storage/farm-store";
+import type { AccentMode, FarmState } from "../../types";
 import "./index.scss";
 
 type ExportKind = "json" | "csv";
+const accentOptions: Array<{ value: AccentMode; label: string; detail: string }> = [
+  { value: "auto", label: "跟随养殖单元", detail: "塘口青绿，网箱海蓝" },
+  { value: "ocean", label: "统一海蓝", detail: "网箱现场工具风格" },
+  { value: "land", label: "统一青绿", detail: "陆地塘口风格" }
+];
 
 const DEVICE_ID_KEY = "fishery-manager:device-id:v1";
 
@@ -185,6 +190,11 @@ export default function DataBackupPage() {
     Taro.navigateTo({ url: `/pages/pond-detail/index?id=${pond.id}` });
   }
 
+  async function handleAccentMode(accentMode: AccentMode) {
+    if (state?.settings.accentMode === accentMode) return;
+    setState(await setAccentMode(accentMode));
+  }
+
   if (!state) {
     return (
       <View className="backup-page">
@@ -209,6 +219,17 @@ export default function DataBackupPage() {
         <View className="summary-cell">
           <Text className="summary-label">记录</Text>
           <Text className="summary-value">{state.records.length} 条</Text>
+        </View>
+      </View>
+
+      <View className="action-section appearance-section">
+        <Text className="section-title">界面颜色</Text>
+        <Text className="hint">颜色只影响操作强调，不影响正常、关注和风险状态。</Text>
+        <View className="accent-options">
+          {accentOptions.map((option) => <View className={`accent-option ${state.settings.accentMode === option.value ? "active" : ""}`} key={option.value} onClick={() => handleAccentMode(option.value)}>
+            <View className={`accent-swatch accent-${option.value}`} />
+            <View><Text className="accent-label">{option.label}</Text><Text className="accent-detail">{option.detail}</Text></View>
+          </View>)}
         </View>
       </View>
 
@@ -272,7 +293,7 @@ export default function DataBackupPage() {
         <Textarea className="preview" disabled value={preview || "点击上方按钮后，这里会显示最近一次导出的内容。"} maxlength={-1} />
         <Text className="hint">{preview ? `当前预览：${previewKind.toUpperCase()}` : "JSON 可用于恢复，CSV 适合粘贴到表格查看。"}</Text>
       </View>
-      <AppTabBar active="data" />
+      <AppTabBar active="mine" />
     </View>
   );
 }

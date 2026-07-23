@@ -59,6 +59,10 @@ function v2Payload(ponds, records, baseRevision = 0, extra = {}) {
   };
 }
 
+function v3Payload(ponds, records, baseRevision = 0, extra = {}) {
+  return { ...v2Payload(ponds, records, baseRevision, extra), protocolVersion: 3 };
+}
+
 describe("syncAccountData v2", () => {
   it("sanitizes client owner fields", () => {
     const payload = _test.normalizePayload(v2Payload([{ ...pond("pond-a"), ownerUserId: "other" }], []));
@@ -93,7 +97,7 @@ describe("syncAccountData v2", () => {
     const records = {};
     for (let index = 0; index < 550; index += 1) records["openid-a-r-" + index] = { _openid: "openid-a", dataEpoch: 2, recordId: "r-" + index, payload: record("r-" + index), updatedAt: new Date() };
     const db = createDb({ ponds: { "openid-a_pond-a": { _openid: "openid-a", dataEpoch: 2, pondId: "pond-a", payload: pond("pond-a"), updatedAt: new Date() } }, records });
-    const result = await _test.pullOwnedState(db, "openid-a");
+    const result = await _test.pullOwnedState(db, "openid-a", 2);
     assert.equal(result.recordCount, 550);
     assert.equal(result.records.length, 550);
   });
@@ -116,5 +120,15 @@ describe("syncAccountData v2", () => {
     const legacy = await _test.main({ action: "pull" }, {}, { db, wxContext: { OPENID: "openid-a" } });
     assert.deepEqual(current.ponds, []);
     assert.deepEqual(legacy.ponds.map((item) => item.id), ["old-pond"]);
+  });
+
+  it("keeps protocol 3 data separate from protocol 2 data", async () => {
+    const db = createDb();
+    await _test.main({ action: "push", payload: v2Payload([pond("old-pond")], []) }, {}, { db, wxContext: { OPENID: "openid-a" } });
+    const fresh = await _test.main({ action: "pull", protocolVersion: 3 }, {}, { db, wxContext: { OPENID: "openid-a" } });
+    assert.deepEqual(fresh.ponds, []);
+    await _test.main({ action: "push", payload: v3Payload([pond("new-pond")], []) }, {}, { db, wxContext: { OPENID: "openid-a" } });
+    const old = await _test.main({ action: "pull", protocolVersion: 2 }, {}, { db, wxContext: { OPENID: "openid-a" } });
+    assert.deepEqual(old.ponds.map((item) => item.id), ["old-pond"]);
   });
 });

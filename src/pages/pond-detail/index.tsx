@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import Taro, { useDidShow } from "@tarojs/taro";
-import { Text, View } from "@tarojs/components";
+import { Image, Text, View } from "@tarojs/components";
 import { BagOutlined, BarChartOutlined, BulbOutlined, CouponOutlined, GoldCoinOutlined, RecordsOutlined, WarningOutlined } from "@taroify/icons";
+import AppTabBar from "../../components/AppTabBar";
 import { shortcuts } from "../../data/seed";
 import { formatArea, formatMoney } from "../../domain/format";
 import { calculateFeedCost, calculateRevenue, calculateSurvivalRate, calculateFcr, calculateTotalCost, getCultureDays, getPondAlert, getRecordTitle } from "../../domain/operations";
 import { deactivatePond, deletePond, loadFarmState } from "../../storage/farm-store";
 import type { FarmRecord, FarmState, Pond } from "../../types";
+import cageArt from "../../assets/offshore-cage.png";
+import pondArt from "../../assets/pond-landscape.jpg";
 import "./index.scss";
 
 const actionIcons = { feed: BagOutlined, water: BulbOutlined, drug: CouponOutlined, harvest: BarChartOutlined, sampling: RecordsOutlined, mortality: WarningOutlined, expense: GoldCoinOutlined };
@@ -15,9 +18,16 @@ function getRoutePondId(): string {
   return Taro.getCurrentInstance().router?.params?.id ?? "";
 }
 
+function unitSize(pond: Pond): string {
+  if (pond.unitType === "pond") return formatArea(pond.areaMu);
+  const dimensions = [pond.cageLengthM, pond.cageWidthM, pond.cageDepthM];
+  return dimensions.every((value) => typeof value === "number") ? `${dimensions.join("×")}米` : "待补网箱尺寸";
+}
+
 export default function PondDetailPage() {
   const [pond, setPond] = useState<Pond | null>(null);
   const [records, setRecords] = useState<FarmRecord[]>([]);
+  const [activeTab, setActiveTab] = useState<"overview" | "growth" | "feed" | "water" | "alert">("overview");
 
   async function refresh() {
     const state: FarmState = await loadFarmState();
@@ -88,94 +98,28 @@ export default function PondDetailPage() {
   const sortedRecords = [...records].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   return (
-    <View className="detail-page">
-      <View className="detail-head">
-        <Text className="eyebrow">{pond.species}</Text>
+    <View className="detail-page safe-tab-page">
+      <View className={`detail-head detail-hero ${pond.unitType === "cage" ? "cage-hero" : "pond-hero"}`}>
+        <View className="hero-copy"><Text className="eyebrow">{pond.unitType === "cage" ? "海上网箱" : "养殖塘口"} · {pond.species}</Text>
         <Text className="title">{pond.name}</Text>
         {pond.status === "inactive" && <Text className="status-badge">已停用</Text>}
         <Text className="subtitle">
-          {pond.location} · {formatArea(pond.areaMu)} · {getCultureDays(pond) === null ? "待补放苗日期" : "第 " + getCultureDays(pond) + " 天"}
+          {pond.location} · {unitSize(pond)} · {getCultureDays(pond) === null ? "待补投放日期" : "第 " + getCultureDays(pond) + " 天"}
         </Text>
-        <Text className="alert">{getPondAlert(pond, { version: 2, ponds: [pond], records, settings: { selectedPondId: pond.id, customProfileThresholds: {} }, syncMeta: { protocolVersion: 2, serverRevision: 0, lastSyncedAt: "", deviceId: "", status: "local", message: "", deletedPondIds: [], deletedRecordIds: [] }, migrationMeta: { sourceVersion: 2, migratedAt: "", needsPondCompletion: pond.needsStockingDate } })}</Text>
-        <View className="detail-actions">
-          <Text className="outline-button" onClick={() => Taro.navigateTo({ url: `/pages/pond-form/index?pondId=${pond.id}` })}>
-            编辑塘口
-          </Text>
-        </View>
+        </View><Image className={`detail-art ${pond.unitType === "pond" ? "pond-detail-art" : ""}`} src={pond.unitType === "cage" ? cageArt : pondArt} mode={pond.unitType === "cage" ? "aspectFit" : "aspectFill"} />
+        <View className="hero-status"><Text>{pond.status === "active" ? "正常" : "已停用"}</Text></View>
       </View>
-
-      <View className="summary-grid">
-        <View className="summary-cell">
-          <Text className="summary-label">收入</Text>
-          <Text className="summary-value">{formatMoney(revenue)}</Text>
-        </View>
-        <View className="summary-cell">
-          <Text className="summary-label">完整成本</Text>
-          <Text className="summary-value">{formatMoney(totalCost)}</Text>
-        </View>
-        <View className="summary-cell">
-          <Text className="summary-label">经营利润</Text>
-          <Text className="summary-value">{formatMoney(profit)}</Text>
-        </View>
-        <View className="summary-cell">
-          <Text className="summary-label">成活率 / FCR</Text>
-          <Text className="summary-value">{survivalRate === null ? "待补数据" : survivalRate.toFixed(1) + "%"} / {fcr === null ? "--" : fcr.toFixed(2)}</Text>
-        </View>
-      </View>
-
-      {pond.status === "inactive" ? (
-        <View className="section">
-          <Text className="inactive-note">该塘口已停用，历史记录仍可查看和编辑。</Text>
-        </View>
-      ) : (
-        <View className="section">
-          <Text className="section-title">新增记录</Text>
-          <View className="action-grid">
-            {shortcuts.map((item) => { const Icon = actionIcons[item.id]; return (
-              <View
-                className="action-button"
-                key={item.id}
-                onClick={() => Taro.navigateTo({ url: `/pages/record-form/index?pondId=${pond.id}&type=${item.id}` })}
-              >
-                <Icon size="22" /><Text>{item.title}</Text>
-              </View>
-            ); })}
-            {(["sampling", "mortality", "expense"] as const).map((type) => { const Icon = actionIcons[type]; return (
-              <View className="action-button" key={type} onClick={() => Taro.navigateTo({ url: `/pages/record-form/index?pondId=${pond.id}&type=${type}` })}>
-                <Icon size="22" /><Text>{{ sampling: "抽样", mortality: "死亡", expense: "支出" }[type]}</Text>
-              </View>
-            ); })}
-          </View>
-        </View>
-      )}
-
-      <View className="section">
-        <Text className="section-title">记录历史</Text>
-        <Text className="section-hint">点击记录可编辑或删除。</Text>
-        {sortedRecords.length === 0 ? (
-          <Text className="empty">暂无记录</Text>
-        ) : (
-          sortedRecords.map((record) => (
-            <View
-              className="history-row"
-              key={record.id}
-              onClick={() => Taro.navigateTo({ url: `/pages/record-form/index?recordId=${record.id}` })}
-            >
-              <View>
-                <Text className="history-title">{getRecordTitle(record)}</Text>
-                <Text className="history-note">{record.note || "无备注"}</Text>
-              </View>
-              <Text className="history-date">{record.date}</Text>
-            </View>
-          ))
-        )}
-      </View>
-      <View className="management-section">
-        <Text className="section-title">塘口管理</Text>
-        <Text className="section-hint">停用后保留历史记录；永久删除无法恢复。</Text>
-        {pond.status !== "inactive" && <Text className="danger-button" onClick={handleDeactivate}>停用塘口</Text>}
-        <Text className="delete-button" onClick={handleDelete}>永久删除塘口</Text>
-      </View>
+      <View className="detail-tabs">{([['overview','概况'],['growth','生长'],['feed','投喂'],['water','水质'],['alert','异常']] as const).map(([key,label]) => <Text className={activeTab === key ? "active" : ""} key={key} onClick={() => setActiveTab(key)}>{label}</Text>)}</View>
+      {activeTab === "overview" ? <>
+        <View className="info-list"><Info label="所属区域" value={pond.location || "待补充"}/><Info label="养殖品种" value={pond.species}/><Info label="规格尺寸" value={pond.unitType === "cage" ? `${pond.cageLengthM || "-"}×${pond.cageWidthM || "-"}×${pond.cageDepthM || "-"}米` : formatArea(pond.areaMu)}/><Info label="投放日期" value={pond.stockingDate || "待补充"}/><Info label="投放规格" value={pond.initialSize || "待补充"}/><Info label="投放数量" value={pond.stockingQuantity ? `${pond.stockingQuantity.toLocaleString()}尾` : "待补充"}/><Info label="当前存塘量" value={pond.stockingQuantity ? `${Math.max(0, pond.stockingQuantity - records.reduce((sum, record) => sum + (record.type === "mortality" ? record.count : 0), 0)).toLocaleString()}尾` : "暂无法计算"}/><Info label="成活率" value={survivalRate === null ? "暂无法计算" : `${survivalRate.toFixed(1)}%`}/><Info label="备注" value="-"/></View>
+      </> : <View className="section tab-content"><Text className="section-title">{{ growth: "生长记录", feed: "投喂记录", water: "水质记录", alert: "异常记录" }[activeTab]}</Text>{sortedRecords.filter((record) => activeTab === "growth" ? record.type === "sampling" : activeTab === "alert" ? record.type === "mortality" : record.type === activeTab).slice(0, 6).map((record) => <View className="history-row" key={record.id} onClick={() => Taro.navigateTo({ url: `/pages/record-form/index?recordId=${record.id}` })}><Text className="history-title">{getRecordTitle(record)}</Text><Text className="history-date">{record.date}</Text></View>)}</View>}
+      <View className="detail-bottom-actions"><Text className="outline-button" onClick={() => Taro.navigateTo({ url: `/pages/pond-form/index?pondId=${pond.id}` })}>编辑</Text><Text className="primary-record-button" onClick={() => Taro.navigateTo({ url: `/pages/record-form/index?pondId=${pond.id}` })}>记录</Text></View>
+      <View className="management-section"><Text className="section-title">养殖单元管理</Text><Text className="section-hint">停用保留历史记录，永久删除无法直接恢复。</Text>{pond.status !== "inactive" && <Text className="danger-button" onClick={handleDeactivate}>停用养殖单元</Text>}<Text className="delete-button" onClick={handleDelete}>永久删除养殖单元</Text></View>
+      <AppTabBar active="units" />
     </View>
   );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return <View className="info-row"><Text>{label}</Text><Text>{value}</Text></View>;
 }
