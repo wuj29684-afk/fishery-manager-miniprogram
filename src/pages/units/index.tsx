@@ -1,52 +1,72 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Taro, { useDidShow } from "@tarojs/taro";
-import { Image, Input, Text, View } from "@tarojs/components";
-import { AddOutlined, Search } from "@taroify/icons";
+import { Image, Input, Picker, Text, View } from "@tarojs/components";
+import { FilterOutlined, Plus, Search } from "@taroify/icons";
 import AppTabBar from "../../components/AppTabBar";
-import { formatArea } from "../../domain/format";
-import { getPondSummaries } from "../../domain/operations";
-import { loadFarmState } from "../../storage/farm-store";
-import type { FarmState, FarmUnitType } from "../../types";
-import cageArt from "../../assets/offshore-cage.png";
-import pondArt from "../../assets/pond-west-thumb.jpg";
+import seaCagePhoto from "../../assets/sea-cage-photo.jpg";
+import indoorRasTanks from "../../assets/indoor-ras-tanks.jpg";
+import otherEcoAquaculture from "../../assets/other-eco-aquaculture.jpg";
+import outdoorPondPhoto from "../../assets/outdoor-pond-photo.jpg";
+import { loadV4State, saveV4State } from "../../v4/store";
+import type { UnitType, V4State } from "../../v4/types";
 import "./index.scss";
 
-type UnitTypeFilter = "all" | FarmUnitType;
-const filters: Array<{ value: UnitTypeFilter; label: string }> = [{ value: "all", label: "全部" }, { value: "cage", label: "网箱" }, { value: "pond", label: "塘口" }];
-
-function sizeLabel(pond: FarmState["ponds"][number]): string {
-  if (pond.unitType === "pond") return formatArea(pond.areaMu);
-  const values = [pond.cageLengthM, pond.cageWidthM, pond.cageDepthM].filter((value): value is number => typeof value === "number");
-  return values.length === 3 ? `${values.join("×")} 米` : "待补网箱尺寸";
-}
+const labels: Record<UnitType, string> = { pond: "塘口", cage: "网箱", tank: "室内池", other: "其他" };
 
 export default function UnitsPage() {
-  const [state, setState] = useState<FarmState | null>(null);
+  const [state, setState] = useState<V4State>(() => loadV4State());
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<UnitTypeFilter>("all");
-  async function refresh() { setState(await loadFarmState()); }
-  useEffect(() => { refresh(); }, []);
-  useDidShow(() => { refresh(); });
+  const [filter, setFilter] = useState<"all" | UnitType>("all");
+  useDidShow(() => setState(loadV4State()));
+  const farmIndex = Math.max(0, state.farms.findIndex((farm) => farm.id === state.settings.selectedFarmId));
+  const farm = state.farms[farmIndex];
+  const units = useMemo(() => state.units.filter((unit) =>
+    unit.farmId === farm?.id &&
+    (filter === "all" || unit.type === filter) &&
+    [unit.name, unit.location, labels[unit.type]].join(" ").includes(query.trim())
+  ), [farm?.id, filter, query, state.units]);
 
-  const units = useMemo(() => {
-    if (!state) return [];
-    const normalized = query.trim().toLowerCase();
-    return getPondSummaries(state).filter((summary) => {
-      const typeMatches = filter === "all" || summary.pond.unitType === filter;
-      const text = [summary.pond.name, summary.pond.species, summary.pond.location].join(" ").toLowerCase();
-      return typeMatches && (!normalized || text.includes(normalized));
-    });
-  }, [filter, query, state]);
-  const cages = units.filter((summary) => summary.pond.unitType === "cage");
-  const ponds = units.filter((summary) => summary.pond.unitType === "pond");
+  function chooseFarm(index: number) {
+    const nextFarm = state.farms[index];
+    if (!nextFarm) return;
+    const first = state.units.find((unit) => unit.farmId === nextFarm.id);
+    setState(saveV4State({ ...state, settings: { ...state.settings, selectedFarmId: nextFarm.id, selectedUnitId: first?.id || "" } }));
+  }
 
-  const renderUnit = (summary: (typeof units)[number]) => <View className={`unit-card ${summary.pond.unitType === "cage" ? "unit-cage" : "unit-pond"} ${summary.pond.status === "inactive" ? "inactive" : ""}`} key={summary.pond.id} onClick={() => Taro.navigateTo({ url: `/pages/pond-detail/index?id=${summary.pond.id}` })}><Image className="unit-thumb" src={summary.pond.unitType === "cage" ? cageArt : pondArt} mode={summary.pond.unitType === "cage" ? "aspectFit" : "aspectFill"} /><View className="unit-copy"><View className="unit-title-row"><Text className="unit-name">{summary.pond.name}</Text><Text className={summary.alertSeverity === "none" ? "unit-status normal" : summary.alertSeverity === "high" ? "unit-status danger" : "unit-status attention"}>{summary.alertSeverity === "none" ? "正常" : summary.alertSeverity === "high" ? "异常" : "值守中"}</Text></View><Text className="unit-meta">{summary.pond.species}　{sizeLabel(summary.pond)}</Text></View></View>;
-
+  const groups: UnitType[] = ["cage", "pond", "tank", "other"];
   return <View className="units-page safe-tab-page">
-    <View className="units-head"><Text className="title">养殖单元</Text><View className="add-unit" onClick={() => Taro.navigateTo({ url: "/pages/pond-form/index" })}><AddOutlined size="21" /><Text>新增</Text></View></View>
-    <View className="search-box"><Search size="20" /><Input className="unit-search" value={query} placeholder="搜索养殖单元名称" onInput={(event) => setQuery(event.detail.value)} /><Text>筛选</Text></View>
-    <View className="filter-tabs">{filters.map((item) => <Text className={filter === item.value ? "active" : ""} key={item.value} onClick={() => setFilter(item.value)}>{item.label}({item.value === "all" ? state?.ponds.length || 0 : state?.ponds.filter((pond) => pond.unitType === item.value).length || 0})</Text>)}</View>
-    {!state ? <Text className="empty">正在读取本机数据...</Text> : !units.length ? <View className="empty-state"><Text>{state.ponds.length ? "没有符合条件的养殖单元" : "还没有养殖单元"}</Text><Text onClick={() => Taro.navigateTo({ url: "/pages/pond-form/index" })}>{state.ponds.length ? "调整筛选条件" : "创建第一个"}</Text></View> : <>{cages.length > 0 && <><Text className="unit-group-title">网箱</Text>{cages.map(renderUnit)}</>}{ponds.length > 0 && <><Text className="unit-group-title">塘口</Text>{ponds.map(renderUnit)}</>}</>}
+    <View className="units-head">
+      <View><Text className="title">养殖单元</Text><Text className="subtitle">{farm?.name || "尚未创建养殖场"}</Text></View>
+      <View className="add-unit" onClick={() => Taro.navigateTo({ url: "/pages/pond-form/index" })}><Plus size="20" /><Text>新增</Text></View>
+    </View>
+    {state.farms.length > 1 && <Picker mode="selector" range={state.farms.map((item) => item.name)} value={farmIndex} onChange={(e) => chooseFarm(Number(e.detail.value))}><Text className="farm-switch">当前：{farm?.name}</Text></Picker>}
+    <View className="search-box"><Search size="20" /><Input value={query} placeholder="搜索养殖单元、地点" onInput={(e) => setQuery(e.detail.value)} /><FilterOutlined size="20" /></View>
+    <View className="filter-tabs">
+      {(["all", "cage", "pond", "tank"] as const).map((item) => <Text className={filter === item ? "active" : ""} key={item} onClick={() => setFilter(item)}>{item === "all" ? "全部" : labels[item]}({item === "all" ? state.units.length : state.units.filter((u) => u.type === item).length})</Text>)}
+    </View>
+    {!units.length ? <View className="empty-state"><Text>暂无符合条件的养殖单元</Text><Text onClick={() => Taro.navigateTo({ url: "/pages/pond-form/index" })}>创建养殖单元</Text></View> :
+      groups.map((type) => {
+        const list = units.filter((unit) => unit.type === type);
+        if (!list.length) return null;
+        return <View key={type}>
+          <Text className="unit-group-title">{labels[type]}（{list.length}）</Text>
+          {list.map((unit, index) => {
+            const batch = state.batches.find((item) => item.unitId === unit.id && item.status !== "completed");
+            const image = unit.type === "cage" ? seaCagePhoto
+              : unit.type === "tank" ? indoorRasTanks
+                : unit.type === "other" ? otherEcoAquaculture
+                  : outdoorPondPhoto;
+            return <View className="unit-card" key={unit.id} onClick={() => Taro.navigateTo({ url: `/pages/pond-detail/index?id=${unit.id}` })}>
+              <Image className="unit-thumb" src={image} mode="aspectFill" />
+              <View className="unit-copy">
+                <View className="unit-title-row"><Text className="unit-name">{unit.name}</Text><Text className={`unit-status ${unit.status === "active" ? "normal" : "attention"}`}>{unit.status === "active" ? "正常" : "停用"}</Text></View>
+                <Text className="unit-meta">{batch?.species || "未设置品种"} · {unit.location || "未填写位置"}</Text>
+                <Text className="unit-meta">{batch?.stockingDate ? `投放 ${batch.stockingDate}` : "暂无投放日期"}</Text>
+              </View>
+            </View>;
+          })}
+        </View>;
+      })}
     <AppTabBar active="units" />
   </View>;
 }

@@ -10,7 +10,7 @@ const tabs = [
   { key: "units" as const, label: "养殖", url: "/pages/units/index", Icon: ShopOutlined },
   { key: "quick" as const, label: "快记", url: "/pages/record-form/index", Icon: Plus },
   { key: "records" as const, label: "记录", url: "/pages/records/index", Icon: RecordsOutlined },
-  { key: "mine" as const, label: "我的", url: "/pages/data-backup/index", Icon: UserOutlined },
+  { key: "mine" as const, label: "我的", url: "/pages/profile/index", Icon: UserOutlined },
 ];
 
 export default function AppTabBar({ active }: { active?: TabKey }) {

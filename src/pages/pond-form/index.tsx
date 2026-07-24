@@ -1,137 +1,106 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Taro from "@tarojs/taro";
-import { Input, Picker, Text, View } from "@tarojs/components";
-import { alertProfiles, inferAlertProfile } from "../../domain/alert-profiles";
+import { Image, Input, Picker, Text, View } from "@tarojs/components";
+import { ArrowLeft, Checked } from "@taroify/icons";
 import AppTabBar from "../../components/AppTabBar";
-import { parseOptionalNumber, validatePondInput } from "../../domain/validation";
-import { addPond, loadFarmState, updatePond } from "../../storage/farm-store";
-import type { AlertProfileId, FarmUnitType } from "../../types";
+import seaCagePhoto from "../../assets/sea-cage-photo.jpg";
+import indoorRasTanks from "../../assets/indoor-ras-tanks.jpg";
+import otherEcoAquaculture from "../../assets/other-eco-aquaculture.jpg";
+import outdoorPondPhoto from "../../assets/outdoor-pond-photo.jpg";
+import { createFarm, createUnit, startBatch } from "../../v4/state";
+import { loadV4State, saveV4State } from "../../v4/store";
+import type { UnitType } from "../../v4/types";
 import "./index.scss";
 
-const profileIds: AlertProfileId[] = ["shrimp", "tilapia", "cageFish", "general"];
-const getPondId = () => Taro.getCurrentInstance().router?.params?.pondId || "";
+const unitTypes: Array<{ value: UnitType; label: string; detail: string; image: string }> = [
+  { value: "cage", label: "网箱", detail: "适合湖泊、水库、海上网箱养殖", image: seaCagePhoto },
+  { value: "pond", label: "塘口", detail: "土塘、池塘等传统养殖", image: outdoorPondPhoto },
+  { value: "tank", label: "室内池", detail: "工厂化、室内循环水养殖", image: indoorRasTanks },
+  { value: "other", label: "其他", detail: "稻渔、流水槽等养殖单元", image: otherEcoAquaculture }
+];
 
 export default function PondFormPage() {
-  const [pondId, setPondId] = useState("");
-  const [unitType, setUnitType] = useState<FarmUnitType>("pond");
-  const [name, setName] = useState("");
-  const [species, setSpecies] = useState("");
+  const initial = loadV4State();
+  const [farmName, setFarmName] = useState(initial.farms.length ? "" : "我的养殖场");
+  const [unitName, setUnitName] = useState("");
   const [location, setLocation] = useState("");
-  const [areaMu, setAreaMu] = useState("");
-  const [cageLengthM, setCageLengthM] = useState("");
-  const [cageWidthM, setCageWidthM] = useState("");
-  const [cageDepthM, setCageDepthM] = useState("");
-  const [cageSpecification, setCageSpecification] = useState("");
-  const [stockingDate, setStockingDate] = useState("");
-  const [stockingQuantity, setStockingQuantity] = useState("");
-  const [initialSize, setInitialSize] = useState("");
-  const [cultureStage, setCultureStage] = useState("");
-  const [targetHarvestDate, setTargetHarvestDate] = useState("");
-  const [alertProfileId, setAlertProfileId] = useState<AlertProfileId>("general");
-  const [phMin, setPhMin] = useState("");
-  const [phMax, setPhMax] = useState("");
-  const [oxygenMin, setOxygenMin] = useState("");
-  const [ammoniaMax, setAmmoniaMax] = useState("");
-  const [nitriteMax, setNitriteMax] = useState("");
+  const [typeIndex, setTypeIndex] = useState(0);
+  const [species, setSpecies] = useState("");
+  const [stockingDate, setStockingDate] = useState(new Date().toISOString().slice(0, 10));
+  const [quantity, setQuantity] = useState("");
+  const [area, setArea] = useState("");
   const [saving, setSaving] = useState(false);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [thresholdsOpen, setThresholdsOpen] = useState(false);
-
-  useEffect(() => {
-    async function init() {
-      const id = getPondId();
-      if (!id) return;
-      const pond = (await loadFarmState()).ponds.find((item) => item.id === id);
-      if (!pond) return;
-      setPondId(id); setUnitType(pond.unitType); setName(pond.name); setSpecies(pond.species); setLocation(pond.location); setAreaMu(String(pond.areaMu));
-      setCageLengthM(pond.cageLengthM ? String(pond.cageLengthM) : ""); setCageWidthM(pond.cageWidthM ? String(pond.cageWidthM) : "");
-      setCageDepthM(pond.cageDepthM ? String(pond.cageDepthM) : ""); setCageSpecification(pond.cageSpecification || "");
-      setStockingDate(pond.stockingDate || ""); setStockingQuantity(pond.stockingQuantity ? String(pond.stockingQuantity) : "");
-      setInitialSize(pond.initialSize || ""); setCultureStage(pond.cultureStage || ""); setTargetHarvestDate(pond.targetHarvestDate || "");
-      setAlertProfileId(pond.alertProfileId); Taro.setNavigationBarTitle({ title: "编辑塘口" });
-      setPhMin(pond.customThresholds?.phMin === undefined ? "" : String(pond.customThresholds.phMin));
-      setPhMax(pond.customThresholds?.phMax === undefined ? "" : String(pond.customThresholds.phMax));
-      setOxygenMin(pond.customThresholds?.dissolvedOxygenMin === undefined ? "" : String(pond.customThresholds.dissolvedOxygenMin));
-      setAmmoniaMax(pond.customThresholds?.ammoniaNitrogenMax === undefined ? "" : String(pond.customThresholds.ammoniaNitrogenMax));
-      setNitriteMax(pond.customThresholds?.nitriteMax === undefined ? "" : String(pond.customThresholds.nitriteMax));
-    }
-    init();
-  }, []);
+  const [step, setStep] = useState<1 | 2>(1);
+  const needsFarm = !initial.farms.length;
 
   async function save() {
     if (saving) return;
-    const quantity = parseOptionalNumber(stockingQuantity, "放苗数量");
-    const thresholdResults = [
-      parseOptionalNumber(phMin, "pH 下限", 0, 14), parseOptionalNumber(phMax, "pH 上限", 0, 14),
-      parseOptionalNumber(oxygenMin, "溶氧下限"), parseOptionalNumber(ammoniaMax, "氨氮上限"), parseOptionalNumber(nitriteMax, "亚硝酸盐上限")
-    ];
-    const thresholdError = thresholdResults.find((item) => !item.valid);
-    const customThresholds = {
-      ...(Number.isNaN(thresholdResults[0].value) ? {} : { phMin: thresholdResults[0].value }),
-      ...(Number.isNaN(thresholdResults[1].value) ? {} : { phMax: thresholdResults[1].value }),
-      ...(Number.isNaN(thresholdResults[2].value) ? {} : { dissolvedOxygenMin: thresholdResults[2].value }),
-      ...(Number.isNaN(thresholdResults[3].value) ? {} : { ammoniaNitrogenMax: thresholdResults[3].value }),
-      ...(Number.isNaN(thresholdResults[4].value) ? {} : { nitriteMax: thresholdResults[4].value })
-    };
-    const input = {
-      unitType, name: name.trim(), species: species.trim(), location: location.trim(), areaMu: unitType === "pond" && areaMu.trim() ? Number(areaMu) : 0,
-      cageLengthM: unitType === "cage" && cageLengthM.trim() ? Number(cageLengthM) : undefined,
-      cageWidthM: unitType === "cage" && cageWidthM.trim() ? Number(cageWidthM) : undefined,
-      cageDepthM: unitType === "cage" && cageDepthM.trim() ? Number(cageDepthM) : undefined,
-      cageSpecification: unitType === "cage" ? cageSpecification.trim() || undefined : undefined,
-      stockingDate: stockingDate || undefined,
-      stockingQuantity: Number.isNaN(quantity.value) ? undefined : quantity.value,
-      initialSize: initialSize.trim() || undefined,
-      cultureStage: cultureStage.trim() || undefined,
-      alertProfileId,
-      customThresholds: Object.keys(customThresholds).length ? customThresholds : undefined,
-      targetHarvestDate: targetHarvestDate || undefined,
-      legacyStockingDays: undefined
-    };
-    const validation = validatePondInput(input);
-    if (!validation.valid || !quantity.valid || thresholdError) { Taro.showToast({ title: !validation.valid ? validation.message : !quantity.valid ? quantity.message : thresholdError?.message || "预警范围不正确", icon: "none" }); return; }
+    if ((needsFarm && !farmName.trim()) || !unitName.trim() || !species.trim()) {
+      await Taro.showToast({ title: "请填写名称和养殖品种", icon: "none" });
+      return;
+    }
     setSaving(true);
     try {
-      if (pondId) await updatePond(pondId, input); else await addPond(input);
-      await Taro.showToast({ title: "保存成功", icon: "success" }); Taro.navigateBack();
-    } finally { setSaving(false); }
+      let state = loadV4State();
+      const actorId = state.auth.userId || "local-user";
+      if (!state.farms.length) {
+        state = createFarm(state, { name: farmName.trim(), province: "", city: "", district: "" }, actorId);
+      }
+      const farmId = state.settings.selectedFarmId || state.farms[0].id;
+      const type = unitTypes[typeIndex].value;
+      state = createUnit(state, {
+        farmId,
+        type,
+        name: unitName.trim(),
+        location: location.trim(),
+        ...(type === "pond" && Number(area) > 0 ? { areaMu: Number(area) } : {})
+      }, actorId);
+      const unitId = state.settings.selectedUnitId;
+      state = startBatch(state, {
+        farmId,
+        unitId,
+        species: species.trim(),
+        stockingDate,
+        ...(Number(quantity) > 0 ? { stockingQuantity: Number(quantity) } : {})
+      }, actorId);
+      saveV4State(state);
+      await Taro.showToast({ title: "养殖单元已创建", icon: "success" });
+      Taro.redirectTo({ url: `/pages/pond-detail/index?id=${unitId}` });
+    } catch (error) {
+      await Taro.showToast({ title: error instanceof Error ? error.message : "保存失败", icon: "none" });
+    } finally {
+      setSaving(false);
+    }
   }
 
   return <View className="form-page safe-tab-page">
-    <View className="form-head"><Text className="title">{pondId ? "编辑养殖单元" : "新增养殖单元"}</Text><Text className="subtitle">先填写日常管理必需信息，专业设置可后续补充。</Text></View>
-    <Text className="form-section-title">类型选择</Text>
-    <View className="unit-type-tabs"><Text className={unitType === "pond" ? "active" : ""} onClick={() => { setUnitType("pond"); if (!pondId) setAlertProfileId(inferAlertProfile(species, "pond")); }}>塘口</Text><Text className={unitType === "cage" ? "active" : ""} onClick={() => { setUnitType("cage"); if (!pondId) setAlertProfileId(inferAlertProfile(species, "cage")); }}>网箱</Text></View>
-    <Text className="form-section-title">基本信息</Text>
+    <View className="form-head"><ArrowLeft size="22" onClick={() => Taro.navigateBack()} /><Text className="title">创建养殖单元</Text><View className="head-spacer" /></View>
+    <View className="step-line"><Text className="active">1</Text><View /><Text className={step === 2 ? "active" : ""}>2</Text><View /><Text>3</Text></View>
+    <View className="step-labels"><Text>类型选择</Text><Text>基本信息</Text><Text>完成</Text></View>
+
+    {step === 1 ? <><Text className="form-section-title">选择养殖类型</Text>
+    <View className="unit-type-list">
+      {unitTypes.map((item, index) => <View className={`unit-type-card ${typeIndex === index ? "active" : ""}`} key={item.value} onClick={() => setTypeIndex(index)}>
+        <Image src={item.image} mode="aspectFill" />
+        <View><Text className="type-name">{item.label}</Text><Text className="type-detail">{item.detail}</Text></View>
+        {typeIndex === index && <Checked className="type-check" size="24" />}
+      </View>)}
+    </View></> : <><Text className="form-section-title">基本信息</Text>
     <View className="form-section">
-      <Field label={unitType === "cage" ? "网箱编号" : "塘口名称"} value={name} placeholder={unitType === "pond" ? "例如 3号高位池" : "例如 A区06号网箱"} onInput={setName} />
-      <Field label="所属区域" value={location} placeholder={unitType === "pond" ? "例如 南区" : "例如 A区"} onInput={setLocation} />
-      <Field label="养殖品种" value={species} placeholder={unitType === "pond" ? "例如 南美白对虾" : "例如 海鲈鱼"} onInput={(value) => { setSpecies(value); if (!pondId) setAlertProfileId(inferAlertProfile(value, unitType)); }} />
-      <DateField label={unitType === "pond" ? "放苗日期" : "投放日期"} value={stockingDate} onChange={setStockingDate} />
-      {unitType === "pond" ? <Field label="面积（亩）" value={areaMu} placeholder="例如 8.5" type="digit" onInput={setAreaMu} /> : <View className="field compact dimension-field"><Text className="label">网箱尺寸</Text><View className="dimension-inputs"><Input className="dimension-input" type="digit" value={cageLengthM} placeholder="长" onInput={(event) => setCageLengthM(event.detail.value)} /><Text>×</Text><Input className="dimension-input" type="digit" value={cageWidthM} placeholder="宽" onInput={(event) => setCageWidthM(event.detail.value)} /><Text>×</Text><Input className="dimension-input" type="digit" value={cageDepthM} placeholder="深" onInput={(event) => setCageDepthM(event.detail.value)} /><Text>米</Text></View></View>}
-      <Field label="投放数量（尾）" value={stockingQuantity} placeholder="例如 10000" type="number" onInput={setStockingQuantity} />
+      {needsFarm && <View className="field"><Text className="label">养殖场</Text><Input className="input" value={farmName} placeholder="我的养殖场" onInput={(e) => setFarmName(e.detail.value)} /></View>}
+      <View className="field"><Text className="label">单元名称</Text><Input className="input" value={unitName} placeholder="例如：1号南美白对虾池" onInput={(e) => setUnitName(e.detail.value)} /></View>
+      <View className="field"><Text className="label">所在位置</Text><Input className="input" value={location} placeholder="例如：东区" onInput={(e) => setLocation(e.detail.value)} /></View>
+      <View className="field"><Text className="label">养殖品种</Text><Input className="input" value={species} placeholder="例如：南美白对虾" onInput={(e) => setSpecies(e.detail.value)} /></View>
+      <Picker mode="date" value={stockingDate} onChange={(e) => setStockingDate(e.detail.value)}>
+        <View className="field"><Text className="label">投放日期</Text><Text className="picker-value">{stockingDate}</Text></View>
+      </Picker>
+      <View className="field"><Text className="label">投放数量</Text><Input className="input" type="number" value={quantity} placeholder="可选" onInput={(e) => setQuantity(e.detail.value)} /><Text className="unit-suffix">尾</Text></View>
+      {unitTypes[typeIndex].value === "pond" && <View className="field"><Text className="label">面积</Text><Input className="input" type="digit" value={area} placeholder="可选" onInput={(e) => setArea(e.detail.value)} /><Text className="unit-suffix">亩</Text></View>}
+    </View></>}
+    <View className="create-actions">
+      {step === 2 && <Text className="back-button" onClick={() => setStep(1)}>上一步</Text>}
+      <Text className="save-button" onClick={step === 1 ? () => setStep(2) : save}>{step === 1 ? "下一步" : saving ? "正在创建..." : "创建并进入单元"}</Text>
     </View>
-    <View className="advanced-toggle" onClick={() => setAdvancedOpen(!advancedOpen)}><View><Text className="advanced-title">补充资料（可选）</Text><Text className="advanced-copy">尺寸、数量、预警范围等可随时补填</Text></View><Text>{advancedOpen ? "收起" : "展开"}</Text></View>
-    {advancedOpen && <View className="advanced-fields"><Text className="form-section-title">养殖资料</Text><View className="form-section">
-      {unitType === "cage" && <Field label="网箱规格" value={cageSpecification} placeholder="例如 HDPE 圆形网箱" onInput={setCageSpecification} />}
-      <Field label="初始规格（克/尾）" value={initialSize} placeholder="例如 0.02" onInput={setInitialSize} />
-      <Field label="养殖阶段" value={cultureStage} placeholder="例如 苗期/中期/后期" onInput={setCultureStage} />
-      <DateField label="目标出塘日期" value={targetHarvestDate} onChange={setTargetHarvestDate} />
-      <Picker mode="selector" range={profileIds.map((id) => alertProfiles[id].name)} value={profileIds.indexOf(alertProfileId)} onChange={(event) => setAlertProfileId(profileIds[Number(event.detail.value)])}><View className="pond-picker"><Text className="label">水质预警模板</Text><Text className="picker-value">{alertProfiles[alertProfileId].name}</Text></View></Picker>
-      </View>
-      <View className="advanced-toggle threshold-toggle" onClick={() => setThresholdsOpen(!thresholdsOpen)}><Text>自定义预警范围（按需填写）</Text><Text>{thresholdsOpen ? "收起" : "展开"}</Text></View>
-      {thresholdsOpen && <View className="threshold-fields form-section"><View className="field-row"><Field label="pH 下限" value={phMin} placeholder="使用模板" type="digit" onInput={setPhMin} /><Field label="pH 上限" value={phMax} placeholder="使用模板" type="digit" onInput={setPhMax} /></View><View className="field-row"><Field label="溶氧下限" value={oxygenMin} placeholder="使用模板" type="digit" onInput={setOxygenMin} /><Field label="氨氮上限" value={ammoniaMax} placeholder="使用模板" type="digit" onInput={setAmmoniaMax} /></View><Field label="亚硝酸盐上限" value={nitriteMax} placeholder="使用模板" type="digit" onInput={setNitriteMax} /></View>}
-    </View>}
-    <Text className="hint">预警模板为养殖参考范围，可在后续按养殖单元调整。</Text>
-    <Text className="save-button" onClick={save}>{saving ? "保存中..." : "保存养殖单元"}</Text>
-    <Text className="cancel-button" onClick={() => Taro.navigateBack()}>取消</Text>
     <AppTabBar active="units" />
   </View>;
-}
-
-function Field(props: { label: string; value: string; placeholder: string; type?: "text" | "number" | "digit"; onInput(value: string): void }) {
-  return <View className="field compact"><Text className="label">{props.label}</Text><Input className="input" type={props.type || "text"} value={props.value} placeholder={props.placeholder} onInput={(event) => props.onInput(event.detail.value)} /></View>;
-}
-
-function DateField(props: { label: string; value: string; onChange(value: string): void }) {
-  return <Picker mode="date" value={props.value} onChange={(event) => props.onChange(event.detail.value)}><View className="field compact"><Text className="label">{props.label}</Text><Text className={`picker-value ${props.value ? "" : "placeholder"}`}>{props.value || "请选择日期"}</Text></View></Picker>;
 }

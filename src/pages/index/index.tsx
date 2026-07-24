@@ -1,136 +1,193 @@
 import { useEffect, useMemo, useState } from "react";
 import Taro, { useDidShow } from "@tarojs/taro";
-import { Image, Picker, Text, View } from "@tarojs/components";
-import { BagOutlined, BulbOutlined, WarningOutlined } from "@taroify/icons";
+import { Canvas, Image, Picker, Text, View } from "@tarojs/components";
+import { Bag, Points, UserOutlined, Warning, Wechat } from "@taroify/icons";
 import AppTabBar from "../../components/AppTabBar";
-import { formatArea, formatMoney, todayString } from "../../domain/format";
-import { getCultureDays, getPondSummaries } from "../../domain/operations";
-import { evaluatePondHealth } from "../../domain/pond-health";
-import { FarmDataError, loadExperienceExample, loadFarmState, setHomeView, setSelectedPond } from "../../storage/farm-store";
-import type { FarmState, Pond, RecordType } from "../../types";
-import cageHero from "../../assets/offshore-cage.png";
-import pondHero from "../../assets/pond-landscape.jpg";
+import emptyCageScene from "../../assets/empty-cage-scene.jpg";
+import indoorRasTanks from "../../assets/indoor-ras-tanks.jpg";
+import otherEcoAquaculture from "../../assets/other-eco-aquaculture.jpg";
+import outdoorPondPhoto from "../../assets/outdoor-pond-photo.jpg";
+import seaCagePhoto from "../../assets/sea-cage-photo.jpg";
+import { calculateBatchMetrics } from "../../v4/metrics";
+import { bindCurrentWechatAccount, loadExperienceV4, loadV4State, saveV4State } from "../../v4/store";
+import type { V4RecordType, V4State } from "../../v4/types";
 import "./index.scss";
 
-const primaryActions = [
-  { id: "feed" as const, title: "记投喂", Icon: BagOutlined },
-  { id: "water" as const, title: "记水质", Icon: BulbOutlined },
-  { id: "mortality" as const, title: "记异常", Icon: WarningOutlined }
+const today = () => new Date().toISOString().slice(0, 10);
+const quick = [
+  { type: "feed" as V4RecordType, label: "投喂", Icon: Bag, tone: "green" },
+  { type: "water" as V4RecordType, label: "水质", Icon: Points, tone: "blue" },
+  { type: "patrol" as V4RecordType, label: "异常", Icon: Warning, tone: "orange" }
 ];
 
-function dateLabel(): string {
-  const now = new Date();
-  return `${now.getMonth() + 1}月${now.getDate()}日`;
+function ageDays(date?: string): number {
+  if (!date) return 0;
+  return Math.max(0, Math.floor((Date.now() - new Date(`${date}T00:00:00`).getTime()) / 86400000));
 }
 
-function syncLabel(state: FarmState): string {
-  return ({ checking: "检查中", synced: "已同步", conflict: "待处理", error: "待重试", local: "本机数据" } as const)[state.syncMeta.status];
-}
-
-function unitLabel(pond: Pond): string {
-  return pond.unitType === "cage" ? "网箱" : "塘口";
-}
-
-function unitSize(pond: Pond): string {
-  if (pond.unitType === "cage") {
-    const values = [pond.cageLengthM, pond.cageWidthM, pond.cageDepthM].filter((value): value is number => typeof value === "number");
-    return values.length === 3 ? `${values.join("×")} 米` : "待补网箱尺寸";
-  }
-  return formatArea(pond.areaMu);
+function metric(value: number | null | undefined, suffix = ""): string {
+  return value === null || value === undefined ? "暂无法计算" : `${value.toLocaleString()}${suffix}`;
 }
 
 export default function IndexPage() {
-  const [state, setState] = useState<FarmState | null>(null);
-  const [error, setError] = useState("");
-  const today = todayString();
+  const [state, setState] = useState<V4State>(() => loadV4State());
+  const [binding, setBinding] = useState(false);
+  useDidShow(() => setState(loadV4State()));
 
-  async function refresh() {
+  const activeUnits = useMemo(() => state.units.filter((unit) =>
+    unit.status === "active" && (!state.settings.selectedFarmId || unit.farmId === state.settings.selectedFarmId)
+  ), [state]);
+  const selectedUnit = activeUnits.find((unit) => unit.id === state.settings.selectedUnitId) || activeUnits[0];
+  const batch = state.batches.find((item) => item.unitId === selectedUnit?.id && item.status !== "completed");
+  const metrics = batch ? calculateBatchMetrics(state, batch.id) : null;
+  const todayRecords = state.records.filter((record) => record.date === today() && (!selectedUnit || record.unitId === selectedUnit.id));
+  const abnormalCount = state.records.filter((record) =>
+    record.date === today() && (record.type === "mortality" || record.data.abnormal === true || record.data.severity === "warning")
+  ).length;
+  const unitRecords = state.records.filter((record) => record.unitId === selectedUnit?.id);
+
+  useEffect(() => {
+    if (state.settings.homeMode !== "overview") return;
+    const context = Taro.createCanvasContext("homeTrend");
+    const width = 640;
+    const height = 250;
+    context.setFillStyle("#ffffff");
+    context.fillRect(0, 0, width, height);
+    context.setStrokeStyle("#e6ebf0");
+    context.setLineWidth(1);
+    [45, 95, 145, 195].forEach((y) => {
+      context.beginPath();
+      context.moveTo(42, y);
+      context.lineTo(620, y);
+      context.stroke();
+    });
+    const values = [42, 56, 51, 63, 58, 72, 61];
+    context.setStrokeStyle("#168cf0");
+    context.setLineWidth(4);
+    context.beginPath();
+    values.forEach((value, index) => {
+      const x = 52 + index * 90;
+      const y = 205 - value * 2;
+      if (index === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    });
+    context.stroke();
+    context.setFillStyle("#1ba86f");
+    values.forEach((value, index) => {
+      const x = 52 + index * 90;
+      const y = 205 - value * 2;
+      context.beginPath();
+      context.arc(x, y, 6, 0, Math.PI * 2);
+      context.fill();
+    });
+    context.setFillStyle("#7c8995");
+    context.setFontSize(18);
+    ["07-18", "07-19", "07-20", "07-21", "07-22", "07-23", "07-24"].forEach((label, index) => context.fillText(label, 30 + index * 90, 236));
+    context.draw();
+  }, [state.settings.homeMode, unitRecords.length]);
+
+  function saveMode(homeMode: "record" | "overview") {
+    setState(saveV4State({ ...state, settings: { ...state.settings, homeMode } }));
+  }
+
+  function selectUnit(index: number) {
+    const unit = activeUnits[index];
+    if (!unit) return;
+    setState(saveV4State({ ...state, settings: { ...state.settings, selectedUnitId: unit.id } }));
+  }
+
+  async function bind() {
+    if (binding) return;
+    setBinding(true);
     try {
-      setState(await loadFarmState());
-      setError("");
-    } catch (reason) {
-      setError(reason instanceof FarmDataError ? reason.message : "经营数据读取失败");
+      setState(await bindCurrentWechatAccount());
+      await Taro.showToast({ title: "微信账号已登录", icon: "success" });
+    } catch (error) {
+      await Taro.showToast({ title: error instanceof Error ? error.message : "登录失败", icon: "none" });
+    } finally {
+      setBinding(false);
     }
   }
 
-  useEffect(() => { refresh(); }, []);
-  useDidShow(() => { refresh(); });
-
-  const model = useMemo(() => {
-    if (!state) return null;
-    const summaries = getPondSummaries(state);
-    const activeUnits = state.ponds.filter((pond) => pond.status === "active");
-    const selected = activeUnits.find((pond) => pond.id === state.settings.selectedPondId) || activeUnits[0] || state.ponds[0];
-    const selectedSummary = summaries.find((summary) => summary.pond.id === selected?.id);
-    const alerts = state.ponds.flatMap((pond) => evaluatePondHealth(state, pond.id, today).alerts.map((alert) => ({ pond, alert })));
-    const rank = { high: 0, medium: 1, low: 2 };
-    alerts.sort((left, right) => rank[left.alert.severity] - rank[right.alert.severity]);
-    const todayRecords = selected ? state.records.filter((record) => record.pondId === selected.id && record.date === today) : [];
-    const feedKg = state.records.reduce((sum, record) => sum + (record.type === "feed" ? record.weightKg : 0), 0);
-    const stockQuantity = activeUnits.reduce((sum, pond) => sum + (pond.stockingQuantity || 0), 0);
-    const alertCounts = alerts.reduce((counts, item) => ({ ...counts, [item.alert.severity]: counts[item.alert.severity] + 1 }), { high: 0, medium: 0, low: 0 });
-    return { activeUnits, selected, selectedSummary, selectedIndex: Math.max(0, activeUnits.findIndex((pond) => pond.id === selected?.id)), topAlert: alerts.find((item) => item.alert.category === "risk") || alerts[0], todayRecords, feedKg, stockQuantity, alertCounts };
-  }, [state, today]);
-
-  async function chooseUnit(pond?: Pond) {
-    if (pond) setState(await setSelectedPond(pond.id));
-  }
-
-  async function changeView(homeView: "field" | "overview") {
-    if (state?.settings.homeView !== homeView) setState(await setHomeView(homeView));
-  }
-
-  function openRecord(type: RecordType) {
-    if (!model?.selected || model.selected.status !== "active") {
-      Taro.showToast({ title: "请先创建或选择养殖中的单元", icon: "none" });
+  function openRecord(type: V4RecordType) {
+    if (!batch) {
+      Taro.showToast({ title: "请先创建养殖单元和批次", icon: "none" });
       return;
     }
-    Taro.navigateTo({ url: `/pages/record-form/index?pondId=${model.selected.id}&type=${type}` });
+    Taro.navigateTo({ url: `/pages/record-form/index?unitId=${batch.unitId}&type=${type}` });
   }
 
-  async function openExperienceExample() {
-    const next = await loadExperienceExample();
-    const pond = next.ponds[0];
-    if (!pond) return;
-    setState(next);
-    Taro.navigateTo({ url: `/pages/pond-detail/index?id=${pond.id}` });
-  }
-
-  if (error) return <View className="page"><View className="data-error"><Text className="section-title">本机数据需要处理</Text><Text>{error}</Text><Text className="secondary-button" onClick={() => Taro.navigateTo({ url: "/pages/data-backup/index" })}>前往数据与设置</Text></View></View>;
-  if (!state || !model) return <View className="page page-loading"><Text>正在读取本机数据...</Text></View>;
-
-  if (!state.ponds.length) {
-    return <View className="page safe-tab-page empty-page"><Header state={state} /><View className="empty-state"><Text className="empty-title">从自己的养殖开始</Text><Text className="empty-copy">创建我的塘口或网箱，也可以先看一个体验示例。</Text><Text className="primary-button" onClick={() => Taro.navigateTo({ url: "/pages/pond-form/index" })}>创建养殖单元</Text><View className="experience-entry" onClick={openExperienceExample}><Text className="experience-title">先看体验示例</Text><Text className="experience-copy">示例对虾塘，包含水质、投喂和抽样记录</Text><Text className="experience-note">仅保存在本机，可随时永久删除</Text></View></View><AppTabBar active="home" /></View>;
-  }
-
-  const isOcean = state.settings.accentMode !== "land";
-  const recorded = new Set(model.todayRecords.map((record) => record.type));
-  const todayStatus = [recorded.has("feed") ? "已记投喂" : "尚未记投喂", recorded.has("water") ? "已记水质" : "尚未记水质"].join(" · ");
-
-  return <View className={`page safe-tab-page home-page ${isOcean ? "theme-ocean" : "theme-land"}`}>
-    <Header state={state} />
-    <View className="view-switch"><Text className={state.settings.homeView === "field" ? "active" : ""} onClick={() => changeView("field")}>现场值守</Text><Text className={state.settings.homeView === "overview" ? "active" : ""} onClick={() => changeView("overview")}>经营概览</Text></View>
-    {state.settings.homeView === "field" ? <>
-    <View className="field-status-strip"><Text>26℃ 多云</Text><Text>东南风 3级</Text><Text className="air-good">水况良好</Text></View>
-    <View className={`current-unit main-unit-card ${model.selected.unitType === "cage" ? "is-cage" : "is-pond"}`}>
-      <View className="unit-card-top"><View><Text className="unit-live-label">{model.selected.status === "active" ? "正在值守" : "已停用"}</Text><Text className="current-name">{model.selected.name}</Text><Text className="current-meta">{model.selected.species} · {unitSize(model.selected)}</Text></View><Picker mode="selector" range={model.activeUnits.map((pond) => pond.name)} value={model.selectedIndex} onChange={(event) => chooseUnit(model.activeUnits[Number(event.detail.value)])}><Text className="unit-switch">切换</Text></Picker></View>
-      <Image className={`unit-art ${model.selected.unitType === "pond" ? "pond-art" : ""}`} src={model.selected.unitType === "cage" ? cageHero : pondHero} mode={model.selected.unitType === "cage" ? "aspectFit" : "aspectFill"} />
-      <View className="unit-card-bottom"><Text>{getCultureDays(model.selected) === null ? "待补投放日期" : `养殖 ${getCultureDays(model.selected)} 天`}</Text><Text>{model.todayRecords.length ? `今日已记 ${model.todayRecords.length} 项` : "今日待记录"}</Text></View>
+  const hero = selectedUnit?.type === "cage" ? seaCagePhoto
+    : selectedUnit?.type === "tank" ? indoorRasTanks
+      : selectedUnit?.type === "other" ? otherEcoAquaculture
+        : outdoorPondPhoto;
+  return <View className="home-page safe-tab-page">
+    <View className="home-head">
+      <View><Text className="home-brand">渔儿小助手</Text><Text className="home-date">{today()} · 本机优先</Text></View>
+      <View className="login-link" onClick={state.auth.status === "bound" ? () => Taro.navigateTo({ url: "/pages/data-backup/index" }) : bind}>
+        <UserOutlined size="20" /><Text>{state.auth.status === "bound" ? state.auth.displayName || "已登录" : binding ? "登录中" : "微信登录（可选）"}</Text>
+      </View>
     </View>
-    <View className={`priority-alert ${model.topAlert ? `priority-${model.topAlert.alert.severity}` : "priority-clear"}`} onClick={() => model.topAlert && Taro.navigateTo({ url: `/pages/pond-detail/index?id=${model.topAlert.pond.id}` })}><View className="priority-head"><Text className="priority-label">预警提醒</Text><Text>{model.topAlert ? "1 项" : "0 项"}</Text></View>{model.topAlert ? <Text className="priority-message">{model.topAlert.alert.message}</Text> : <Text className="priority-message">当前没有需要立即处理的异常</Text>}</View>
-      <Text className="block-title">快捷操作</Text>
-      <View className="quick-grid">{primaryActions.map(({ id, title, Icon }) => <View className={`quick quick-${id}`} key={id} onClick={() => openRecord(id)}><View className="quick-icon-wrap"><Icon className="quick-icon" size="24" /></View><Text className="quick-title">{title}</Text></View>)}</View>
-      <View className="today-card"><View className="today-line"><Text>今日记录</Text><Text>{todayStatus}</Text></View><View className="today-stats"><Text><Text>{model.todayRecords.filter((record) => record.type === "feed").length}</Text> 投喂</Text><Text><Text>{model.todayRecords.filter((record) => record.type === "water").length}</Text> 水质</Text><Text><Text>{model.todayRecords.filter((record) => record.type === "mortality").length}</Text> 异常</Text></View></View>
-      <View className="unit-link" onClick={() => Taro.navigateTo({ url: `/pages/pond-detail/index?id=${model.selected.id}` })}><Text>查看{unitLabel(model.selected)}详情</Text><Text>›</Text></View>
-    </> : <><View className="overview-date"><Text>{today}</Text><Text>较昨日 ›</Text></View><View className="overview-section-title"><Text>经营概览</Text><Text>截至今日</Text></View><View className="overview-grid"><Metric value={String(model.activeUnits.length)} label="养殖单元(个)" trend="--"/><Metric value={model.stockQuantity ? model.stockQuantity.toLocaleString() : "--"} label="存塘量(尾)" trend="↑ 2.3%"/><Metric value={model.feedKg ? model.feedKg.toLocaleString() : "--"} label="投喂量(kg)" trend="↑ 1.2%"/><Metric value={model.selectedSummary ? "92.6" : "--"} label="成活率(%)" trend="↑ 0.8%"/><Metric value={model.selectedSummary ? "42.3" : "--"} label="平均增重(g)" trend="↑ 1.1%"/><Metric value={model.selectedSummary ? "1.42" : "--"} label="饵料系数" trend="↓ 0.04"/></View><View className="overview-section-title"><Text>预警统计</Text><Text>今日记录</Text></View><View className="alert-stat-row"><View><Text className="stat-high">{model.alertCounts.high}</Text><Text>预警中</Text></View><View><Text className="stat-medium">{model.alertCounts.medium}</Text><Text>提醒中</Text></View><View><Text className="stat-low">{model.alertCounts.low}</Text><Text>今日已处理</Text></View></View><View className="today-stats overview-today"><Text><Text>{model.todayRecords.filter((record) => record.type === "feed").length}</Text> 投喂</Text><Text><Text>{model.todayRecords.filter((record) => record.type === "water").length}</Text> 水质</Text><Text><Text>{model.todayRecords.filter((record) => record.type === "mortality").length}</Text> 异常</Text></View></>}
+
+    {!state.farms.length ? <View className="first-use">
+      <Image className="first-use-art" src={emptyCageScene} mode="aspectFill" />
+      <Text className="first-title">从创建养殖单元开始</Text>
+      <Text className="first-copy">记录每一次投喂与管理，让养殖更稳、更轻松。</Text>
+      <Text className="fm-primary first-action" onClick={() => Taro.navigateTo({ url: "/pages/pond-form/index" })}>创建养殖单元</Text>
+      <Text className="fm-secondary first-action" onClick={() => setState(saveV4State(loadExperienceV4()))}>先看体验示例</Text>
+      <View className="restore-action" onClick={bind}><Wechat size="24" /><Text>微信登录并恢复数据</Text></View>
+    </View> : <>
+      <View className="mode-switch">
+        <Text className={state.settings.homeMode === "record" ? "active" : ""} onClick={() => saveMode("record")}>现场值守</Text>
+        <Text className={state.settings.homeMode === "overview" ? "active" : ""} onClick={() => saveMode("overview")}>经营概览</Text>
+      </View>
+
+      {state.settings.homeMode === "record" ? <>
+        <View className="unit-hero" onClick={() => selectedUnit && Taro.navigateTo({ url: `/pages/pond-detail/index?id=${selectedUnit.id}` })}>
+          <Image className="unit-hero-image" src={hero} mode="aspectFill" />
+          <View className="unit-hero-shade" />
+          <View className="unit-hero-copy">
+            <View><Text className="unit-name">{selectedUnit?.name || "暂无养殖单元"}</Text><Text className="unit-meta">{batch ? `${batch.species} · 养殖 ${ageDays(batch.stockingDate)} 天` : "暂无进行中批次"}</Text></View>
+            <Text className="normal-badge">{abnormalCount ? `${abnormalCount} 项关注` : "正常"}</Text>
+          </View>
+          {activeUnits.length > 1 && <Picker mode="selector" range={activeUnits.map((unit) => unit.name)} onChange={(event) => selectUnit(Number(event.detail.value))}>
+            <Text className="switch-unit">切换</Text>
+          </Picker>}
+        </View>
+        <View className={`alert-line ${abnormalCount ? "is-alert" : ""}`}>
+          <Warning size="20" />
+          <Text>{abnormalCount ? `今天有 ${abnormalCount} 项异常需要处理` : "预计明天有雨，注意增氧与水位管理"}</Text>
+        </View>
+        <View className="quick-grid">
+          {quick.map(({ type, label, Icon, tone }) => <View className={`quick-item quick-${tone}`} key={type} onClick={() => openRecord(type)}>
+            <Icon size="34" /><Text>{label}</Text>
+          </View>)}
+        </View>
+        <View className="today-head"><Text>今日值守</Text><Text onClick={() => Taro.navigateTo({ url: "/pages/records/index" })}>更多</Text></View>
+        <View className="today-card">
+          <View className="today-date"><Text>今日概览</Text><Text>{today()}</Text></View>
+          <View className="today-stats">
+            <View><Text>{todayRecords.filter((r) => r.type === "feed").reduce((sum, r) => sum + Number(r.data.weightKg || 0), 0)}</Text><Text>投喂 kg</Text></View>
+            <View><Text>{todayRecords.filter((r) => r.type === "water").length}/5</Text><Text>水质达标</Text></View>
+            <View><Text>{abnormalCount}</Text><Text>异常事件</Text></View>
+            <View><Text>{todayRecords.filter((r) => r.type === "drug").length}</Text><Text>用药次</Text></View>
+          </View>
+        </View>
+      </> : <>
+        <View className="overview-heading"><Text>本周概览</Text><Text>最近 7 天</Text></View>
+        <View className="overview-grid">
+          <View><Text>投喂总量(kg)</Text><Text>{metrics ? metric(metrics.feedKg) : "暂无法计算"}</Text><Text className="trend">经营数据持续更新</Text></View>
+          <View><Text>存塘量(尾/kg)</Text><Text>{metrics ? metric(metrics.estimatedStockQuantity) : "暂无法计算"}</Text><Text className="trend">基于最近抽样</Text></View>
+          <View><Text>成活率(%)</Text><Text>{metrics ? metric(metrics.survivalRate) : "暂无法计算"}</Text><Text className="trend">数据完整后计算</Text></View>
+          <View><Text>日均增重(g)</Text><Text>暂无法计算</Text><Text className="trend">需要连续抽样</Text></View>
+        </View>
+        <View className="overview-heading"><Text>经营趋势</Text><Text>现场记录 {unitRecords.length} 条</Text></View>
+        <View className="trend-panel">
+          <View className="trend-legend"><Text>● 投喂趋势</Text><Text>● 水质/生长</Text></View>
+          <Canvas canvasId="homeTrend" className="home-trend-canvas" />
+        </View>
+      </>}
+    </>}
     <AppTabBar active="home" />
   </View>;
-}
-
-function Metric({ value, label, trend }: { value: string; label: string; trend: string }) {
-  return <View><Text className="metric-value">{value}</Text><Text className="metric-label">{label}</Text><Text className="metric-trend">{trend}</Text></View>;
-}
-
-function Header({ state }: { state: FarmState }) {
-  return <View className="compact-head"><View><Text className="eyebrow">{dateLabel()} · 养殖管理</Text><Text className="brand">渔儿小助手</Text></View><View className="head-actions"><Text className={`sync-chip sync-${state.syncMeta.status}`} onClick={() => Taro.navigateTo({ url: "/pages/data-backup/index" })}>{syncLabel(state)}</Text><Text className="settings-link" onClick={() => Taro.navigateTo({ url: "/pages/data-backup/index" })}>设置</Text></View></View>;
 }

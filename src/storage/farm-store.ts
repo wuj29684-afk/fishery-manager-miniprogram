@@ -5,7 +5,8 @@ import { validateFarmState } from "../domain/state-validation";
 import { addDaysToDate } from "../domain/withdrawal";
 import type { AccentMode, FarmRecord, FarmRecordInput, FarmState, HomeView, Pond } from "../types";
 
-const STORAGE_KEY = "fishery-manager:farm-state:v1";
+export const FARM_STATE_STORAGE_KEY = "fishery-manager:farm-state:v1";
+const STORAGE_KEY = FARM_STATE_STORAGE_KEY;
 const MIGRATION_BACKUP_KEY = "fishery-manager:farm-state:v1:migration-backup";
 const RECOVERY_KEY = "fishery-manager:farm-state:v2:recovery";
 const DATA_EPOCH_KEY = "fishery-manager:data-epoch:v1";

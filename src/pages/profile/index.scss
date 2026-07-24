@@ -1,0 +1,15 @@
+.profile-page { min-height: 100vh; padding: 18px 22px 42px; background: var(--fm-bg); }
+.profile-head { margin-bottom: 18px; }
+.profile-title { display: block; font-size: 40px; font-weight: 800; }
+.profile-status { display: block; margin-top: 5px; color: var(--fm-muted); font-size: 24px; }
+.tool-group { padding: 18px; margin-bottom: 14px; border: 1px solid var(--fm-line); border-radius: 8px; background: #fff; }
+.tool-title { display: block; margin-bottom: 16px; color: #16825e; font-size: 30px; font-weight: 800; }
+.tool-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.tool-item { display: flex; min-width: 0; min-height: 112px; flex-direction: column; align-items: center; justify-content: center; gap: 9px; border-radius: 7px; background: #f0faf5; color: #268960; }
+.tool-item text { color: #44525f; font-size: 23px; white-space: nowrap; }
+.tool-blue .tool-title, .tool-blue .tool-icon { color: var(--fm-blue-500); }
+.tool-blue .tool-item { background: #f0f6ff; }
+.tool-orange .tool-title, .tool-orange .tool-icon { color: #e7782f; }
+.tool-orange .tool-item { background: #fff7ef; }
+.tool-purple .tool-title, .tool-purple .tool-icon { color: #7867cf; }
+.tool-purple .tool-item { background: #f6f3ff; }

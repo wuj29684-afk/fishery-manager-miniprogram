@@ -6,14 +6,17 @@ export default defineAppConfig({
     "pages/pond-form/index",
     "pages/record-form/index",
     "pages/records/index",
+    "pages/profile/index",
     "pages/data-backup/index",
-    "pages/about-data/index"
+    "pages/reports/index",
+    "pages/about-data/index",
+    "pages/migration-preview/index"
   ],
   window: {
     backgroundTextStyle: "light",
     navigationBarBackgroundColor: "#ffffff",
     navigationBarTitleText: "渔儿小助手",
     navigationBarTextStyle: "black",
-    backgroundColor: "#f4f7f2"
+    backgroundColor: "#f5f7fa"
   }
 });

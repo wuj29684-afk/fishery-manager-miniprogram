@@ -11,7 +11,7 @@ try {
 }
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
-const REQUIRED_COLLECTIONS = ["ponds", "records", "sync_revisions"];
+const REQUIRED_COLLECTIONS = ["ponds", "records", "sync_revisions", "v4_states", "invitations", "memberships"];
 const PAGE_SIZE = 100;
 const MAX_ITEMS = 5000;
 const CURRENT_DATA_EPOCH = 3;
@@ -185,11 +185,190 @@ async function pushOwnedState(db, openid, rawPayload) {
   return pullOwnedState(db, openid, dataEpoch);
 }
 
+function sanitizeV4State(rawState, openid) {
+  if (!rawState || rawState.version !== 3) throw new Error("invalid v4 state");
+  const listKeys = [
+    "farms", "members", "units", "batches", "records", "inventory", "inventoryMovements",
+    "tasks", "templates", "deletionAudit", "telemetry"
+  ];
+  for (const key of listKeys) {
+    if (!Array.isArray(rawState[key]) || rawState[key].length > MAX_ITEMS) throw new Error("invalid v4 " + key);
+  }
+  const state = JSON.parse(JSON.stringify(rawState));
+  state.auth = { ...state.auth, status: "bound", userId: openid };
+  state.farms = state.farms.map((farm) => ({ ...farm, ownerUserId: openid }));
+  state.members = state.members.map((member) =>
+    member.role === "owner" ? { ...member, userId: openid } : member
+  );
+  state.telemetry = state.telemetry.slice(-200);
+  return state;
+}
+
+async function getV4Document(db, openid) {
+  const result = await db.collection("v4_states").doc(openid).get().catch(() => ({ data: null }));
+  return result.data;
+}
+
+async function syncV4State(db, openid, rawState, baseRevision) {
+  await ensureCollections(db);
+  let ownerOpenid = openid;
+  let membership = null;
+  let existing = await getV4Document(db, ownerOpenid);
+  if (!existing) {
+    const memberships = await db.collection("memberships").where({ memberOpenid: openid, status: "active" }).limit(1).get().catch(() => ({ data: [] }));
+    membership = memberships.data[0] || null;
+    ownerOpenid = membership && membership.ownerOpenid;
+    existing = ownerOpenid ? await getV4Document(db, ownerOpenid) : null;
+  }
+  const revision = Number(existing && existing.revision || 0);
+  if (existing && Number(baseRevision || 0) !== revision) {
+    return { state: stateForUser(existing.state, openid), revision, syncedAt: existing.syncedAt, conflict: true };
+  }
+  if (membership) {
+    const member = existing.state.members.find((item) => item.userId === openid && item.status === "active");
+    if (!member) throw new Error("recorder access is not active");
+    const immutableKeys = ["farms", "members", "units", "batches", "inventory", "inventoryMovements", "tasks", "templates"];
+    for (const key of immutableKeys) {
+      if (JSON.stringify(rawState[key]) !== JSON.stringify(existing.state[key])) throw new Error("recorder cannot change " + key);
+    }
+    const submittedOwn = rawState.records.filter((record) => record.createdBy === openid);
+    if (submittedOwn.some((record) => member.unitIds.length && !member.unitIds.includes(record.unitId))) {
+      throw new Error("recorder unit access denied");
+    }
+    const records = [
+      ...existing.state.records.filter((record) => record.createdBy !== openid),
+      ...submittedOwn.map((record) => ({ ...record, createdBy: openid, updatedBy: openid }))
+    ];
+    const state = { ...existing.state, records };
+    const syncedAt = new Date().toISOString();
+    await db.collection("v4_states").doc(ownerOpenid).set({
+      data: { ...existing, state, revision: revision + 1, syncedAt, updatedAt: db.serverDate() }
+    });
+    return { state: stateForUser(state, openid), revision: revision + 1, syncedAt, conflict: false };
+  }
+  const state = sanitizeV4State(rawState, openid);
+  const syncedAt = new Date().toISOString();
+  await db.collection("v4_states").doc(openid).set({
+    data: { _openid: openid, state, revision: revision + 1, syncedAt, updatedAt: db.serverDate() }
+  });
+  return { state, revision: revision + 1, syncedAt, conflict: false };
+}
+
+function stateForUser(state, openid) {
+  return {
+    ...JSON.parse(JSON.stringify(state)),
+    auth: { status: "bound", userId: openid, displayName: "微信用户" }
+  };
+}
+
+function invitationCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let index = 0; index < 8; index += 1) {
+    code += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return code;
+}
+
+async function createInvitation(db, openid, farmId) {
+  await ensureCollections(db);
+  const document = await getV4Document(db, openid);
+  const farm = document && document.state && document.state.farms.find((item) => item.id === farmId);
+  if (!farm || farm.ownerUserId !== openid) throw new Error("only farm owner can invite");
+  const code = invitationCode();
+  await db.collection("invitations").doc(code).set({
+    data: {
+      code,
+      farmId,
+      ownerOpenid: openid,
+      role: "recorder",
+      status: "active",
+      createdAt: db.serverDate()
+    }
+  });
+  return { code };
+}
+
+async function acceptInvitation(db, openid, code) {
+  const result = await db.collection("invitations").doc(code).get().catch(() => ({ data: null }));
+  const invite = result.data;
+  if (!invite || invite.status !== "active") throw new Error("invitation is invalid");
+  const document = await getV4Document(db, invite.ownerOpenid);
+  if (!document) throw new Error("farm owner data not found");
+  if (document.state.members.filter((item) => item.role === "recorder").length >= 5) throw new Error("recorder limit reached");
+  const now = new Date().toISOString();
+  const member = {
+    id: "member-" + openid,
+    farmId: invite.farmId,
+    userId: openid,
+    displayName: "待确认成员",
+    role: "recorder",
+    unitIds: [],
+    canViewFinance: false,
+    status: "paused",
+    createdAt: now,
+    updatedAt: now
+  };
+  const state = { ...document.state, members: [...document.state.members.filter((item) => item.userId !== openid), member] };
+  await Promise.all([
+    db.collection("v4_states").doc(invite.ownerOpenid).set({ data: { ...document, state, revision: document.revision + 1, updatedAt: db.serverDate() } }),
+    db.collection("memberships").doc(openid + "_" + invite.ownerOpenid).set({
+      data: { memberOpenid: openid, ownerOpenid: invite.ownerOpenid, farmId: invite.farmId, status: "paused" }
+    }),
+    db.collection("invitations").doc(code).set({ data: { ...invite, status: "used", usedBy: openid } })
+  ]);
+  return { member };
+}
+
+async function approveMember(db, openid, userId, unitIds, canViewFinance) {
+  const document = await getV4Document(db, openid);
+  if (!document) throw new Error("owner data not found");
+  const member = document.state.members.find((item) => item.userId === userId && item.role === "recorder");
+  if (!member) throw new Error("member not found");
+  const allowedUnits = unitIds.filter((id) => document.state.units.some((unit) => unit.id === id && unit.farmId === member.farmId));
+  const state = {
+    ...document.state,
+    members: document.state.members.map((item) => item.userId === userId
+      ? { ...item, unitIds: allowedUnits, canViewFinance: canViewFinance === true, status: "active", updatedAt: new Date().toISOString() }
+      : item)
+  };
+  await Promise.all([
+    db.collection("v4_states").doc(openid).set({ data: { ...document, state, revision: document.revision + 1, updatedAt: db.serverDate() } }),
+    db.collection("memberships").doc(userId + "_" + openid).set({
+      data: { memberOpenid: userId, ownerOpenid: openid, farmId: member.farmId, status: "active" }
+    })
+  ]);
+  return { approved: true };
+}
+
+async function pullMemberState(db, openid) {
+  const memberships = await db.collection("memberships").where({ memberOpenid: openid, status: "active" }).limit(1).get().catch(() => ({ data: [] }));
+  const membership = memberships.data[0];
+  if (!membership) throw new Error("active membership not found");
+  const document = await getV4Document(db, membership.ownerOpenid);
+  if (!document) throw new Error("owner data not found");
+  return { state: stateForUser(document.state, openid), revision: document.revision, syncedAt: document.syncedAt };
+}
+
+async function deleteV4Account(db, openid) {
+  await removeDoc(db.collection("v4_states"), openid);
+  const invitations = await db.collection("invitations").where({ ownerOpenid: openid }).limit(MAX_ITEMS).get().catch(() => ({ data: [] }));
+  await Promise.all(invitations.data.map((item) => removeDoc(db.collection("invitations"), item.code)));
+  return { deleted: true };
+}
+
 async function main(event, _context, deps = {}) {
   const wxContext = deps.wxContext || cloud.getWXContext();
   const openid = wxContext.OPENID;
   if (!openid) throw new Error("missing openid");
   const db = deps.db || cloud.database();
+  if (event.action === "identity") return { openid };
+  if (event.action === "v4Sync") return syncV4State(db, openid, event.state, event.baseRevision);
+  if (event.action === "inviteCreate") return createInvitation(db, openid, String(event.farmId || ""));
+  if (event.action === "inviteAccept") return acceptInvitation(db, openid, String(event.code || ""));
+  if (event.action === "memberApprove") return approveMember(db, openid, String(event.userId || ""), Array.isArray(event.unitIds) ? event.unitIds.map(String) : [], event.canViewFinance);
+  if (event.action === "v4MemberPull") return pullMemberState(db, openid);
+  if (event.action === "v4DeleteAccount") return deleteV4Account(db, openid);
   if (event.action === "push") {
     await ensureCollections(db);
     return pushOwnedState(db, openid, event.payload);
@@ -199,4 +378,8 @@ async function main(event, _context, deps = {}) {
 }
 
 exports.main = main;
-exports._test = { checksum, ensureCollections, normalizePayload, pullAll, pullOwnedState, pushOwnedState, main, CURRENT_DATA_EPOCH };
+exports._test = {
+  checksum, ensureCollections, normalizePayload, pullAll, pullOwnedState, pushOwnedState,
+  sanitizeV4State, syncV4State, createInvitation, acceptInvitation, approveMember, pullMemberState,
+  deleteV4Account, main, CURRENT_DATA_EPOCH
+};

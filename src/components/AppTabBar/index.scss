@@ -6,8 +6,8 @@
   left: 0;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  min-height: 118px;
-  padding: 8px 14px calc(8px + env(safe-area-inset-bottom));
+  min-height: 104px;
+  padding: 6px 14px calc(6px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--fm-line);
   background: rgba(255, 255, 255, 0.99);
 }
@@ -17,7 +17,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 2px;
   color: #77837c;
 }
 
@@ -27,17 +27,17 @@
 
 .app-tab-icon-wrap {
   display: flex;
-  width: 56px;
-  height: 50px;
+  width: 52px;
+  height: 46px;
   align-items: center;
   justify-content: center;
 }
 
 .app-tab-quick .app-tab-icon-wrap {
-  width: 72px;
-  height: 72px;
-  margin-top: -35px;
-  border: 6px solid #fff;
+  width: 66px;
+  height: 66px;
+  margin-top: -31px;
+  border: 5px solid #fff;
   border-radius: 50%;
   background: var(--fm-blue-500);
   color: #fff;
@@ -54,6 +54,6 @@
 }
 
 .app-tab-label {
-  font-size: 25px;
+  font-size: 23px;
   font-weight: 600;
 }

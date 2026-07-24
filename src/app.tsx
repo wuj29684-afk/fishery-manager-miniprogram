@@ -1,4 +1,6 @@
 import { CLOUDBASE_ENV_ID, isCloudBaseSyncConfigured } from "./config/api";
+import { useDidShow } from "@tarojs/taro";
+import { loadV4State, recordTelemetry, syncV4State } from "./v4/store";
 import "./app.scss";
 
 declare const wx: {
@@ -25,6 +27,14 @@ function initCloudBase() {
 
 function App(props: { children: JSX.Element }) {
   initCloudBase();
+  useDidShow(() => {
+    const state = loadV4State();
+    if (state.auth.status === "bound" && state.settings.autoSyncEnabled && state.syncMeta.pendingEntityIds.length) {
+      syncV4State()
+        .then(() => recordTelemetry("auto-sync", true))
+        .catch((error) => recordTelemetry("auto-sync", false, error instanceof Error ? error.name : "unknown"));
+    }
+  });
   return props.children;
 }
 

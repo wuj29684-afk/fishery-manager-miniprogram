@@ -1,0 +1,6 @@
+.report-page { padding: 28px; background: #f4f7f2; min-height: 100vh; box-sizing: border-box; }
+.report-canvas { width: 690px; height: 1500px; background: #fff; }
+.report-actions { display: flex; gap: 16px; margin: 20px 0; }
+.report-actions text { flex: 1; padding: 18px; text-align: center; background: #fff; }
+.report-actions .active { background: #176b4d; color: #fff; }
+.report-button { display: block; padding: 22px; margin-top: 20px; text-align: center; color: #fff; background: #176b4d; }

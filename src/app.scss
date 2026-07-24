@@ -10,7 +10,7 @@ page {
   --fm-cyan-500: #27b7c4;
   --fm-amber-500: #ef9417;
   --fm-red-500: #d8473f;
-  --fm-bg: #f6f8fb;
+  --fm-bg: #f5f7fa;
   --fm-card: #ffffff;
   --fm-line: #e4e9ee;
   --fm-text: #17212b;
@@ -28,5 +28,56 @@ text {
 }
 
 .safe-tab-page {
-  padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  padding-bottom: calc(132px + env(safe-area-inset-bottom)) !important;
+}
+
+.page-shell {
+  min-height: 100vh;
+  padding: 18px 22px 42px;
+  background: var(--fm-bg);
+}
+
+.page-title {
+  display: block;
+  color: var(--fm-text);
+  font-size: 40px;
+  font-weight: 800;
+}
+
+.page-subtitle {
+  display: block;
+  margin-top: 6px;
+  color: var(--fm-muted);
+  font-size: 25px;
+  line-height: 1.45;
+}
+
+.fm-primary,
+.fm-secondary,
+.fm-danger {
+  display: flex;
+  min-height: 88px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 29px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.fm-primary {
+  background: var(--fm-blue-500);
+  color: #fff;
+}
+
+.fm-secondary {
+  border: 1px solid #a8cef1;
+  background: #fff;
+  color: var(--fm-blue-700);
+}
+
+.fm-danger {
+  border: 1px solid #e8b7b1;
+  background: #fff;
+  color: var(--fm-red-500);
 }

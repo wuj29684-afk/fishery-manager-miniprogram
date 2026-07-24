@@ -1,54 +1,44 @@
-# 0.3.0 Eight-Screen Design QA
+# 0.4.0 Option 3 Twelve-Screen Design QA
 
 ## Comparison Target
 
-- Source visual truth: `C:\Users\26288\.codex\generated_images\019f4216-b404-7df3-a968-d8ccc35cc633\exec-3fa24e03-5890-43c7-9003-1f669bbf8884.png`
-- Required states: field home, overview home, unit list, cage form, cage detail, feed form, water/anomaly form, and records/data settings.
-- Viewport: WeChat DevTools iPhone 12/13 simulator, 488 x 941 screenshot pixels.
-- Final combined evidence: `qa-captures/design-vs-implementation-pass2.png`.
+- Source visual truth: `C:\Users\26288\.codex\generated_images\019f4216-b404-7df3-a968-d8ccc35cc633\call_CA5cSx9Irx01vf6H52HQ0YDs.png`
+- Required states: empty home, field-duty home, business-overview home, unit list, unit creation, unit detail, quick record, feed form, water form, record list, function center, and data sync.
+- Viewport: WeChat DevTools mobile simulator, 487 x 904 screenshot pixels.
+- Final combined evidence: `qa-captures/design-vs-implementation-option3.jpg`.
 
 ## Final Findings
 
-- No actionable P0, P1, or P2 visual findings remain.
-- Navigation: all eight states now use the selected five-column navigation. The raised center quick-record action remains stable and the active item matches each screen.
-- Typography and density: the Chinese hierarchy, medium-density rows, field labels, values, and section headings remain readable without clipping or overlap.
-- Layout: the two home modes, grouped unit list, medium-density cage form, five-tab detail, feed and water forms, and combined record/settings screen preserve the reference information order.
-- Actions: detail edit/record actions and record save/save-and-continue actions remain visible above the bottom navigation at the target viewport.
-- Colors: sea blue is the primary color; cyan/green communicate normal water and operating states; orange/red remain reserved for reminders and risk.
-- Assets: the cage artwork is a real transparent raster asset with a clean crop. No checkerboard, opaque placeholder, CSS drawing, emoji, or handcrafted SVG substitute is present.
-- Domain substitutions: counts, dates, alerts, and sample values come from deterministic QA data. They may differ from the illustrative mock while preserving the same component structure and hierarchy.
+- No actionable P0, P1, or P2 visual findings remain in the twelve required states.
+- Navigation: all daily screens use the selected five-column navigation with a stable raised quick-record action and correct active states.
+- Hierarchy: the selected compact header, segmented home modes, grouped unit list, medium-density forms, detail tabs, function groups, and sync sections retain the reference order and visual weight.
+- Actions: creation, detail, and form actions remain visible above the bottom navigation at the target viewport.
+- Colors: water blue is primary, aquaculture green communicates normal states, and orange/red remain reserved for reminders and risk.
+- Assets: all four aquaculture-unit types now use a single bright semi-realistic editorial illustration system. Net cage, outdoor pond, indoor RAS tank, and ecological aquaculture remain recognizable in both 72 x 54 thumbnails and wide detail crops.
+- Indoor aquaculture: the indoor image clearly shows a bright recirculating aquaculture facility with circular culture tanks, filtration equipment, and circulation pipes. It no longer reads as an unrelated industrial or outdoor scene.
+- Local-first account behavior and existing business functions are preserved; the visual rebuild does not reintroduce forced login.
 
-## Comparison History
+## Aquaculture Image Evidence
 
-### Baseline - blocked
+- Unit creation screen: `qa-captures/option3-05-create-unit.png`.
+- Scrolled unit list: `qa-captures/option3-unit-images-list.png`.
+- Outdoor pond detail: `qa-captures/option3-unit-image-pond.png`.
+- Indoor RAS detail: `qa-captures/option3-unit-image-tank.png`.
+- Ecological aquaculture detail: `qa-captures/option3-unit-image-other.png`.
+- Net cage detail: `qa-captures/option3-06-unit-detail.png`.
 
-- The previous implementation used a different layout direction and had not captured all eight required states.
+## Asset Mapping
 
-### Pass 1 - blocked
+- `cage`: `src/assets/sea-cage-photo.jpg`
+- `pond`: `src/assets/outdoor-pond-photo.jpg`
+- `tank`: `src/assets/indoor-ras-tanks.jpg`
+- `other`: `src/assets/other-eco-aquaculture.jpg`
 
-- Cage creation lacked visible dimensions and stocking quantity.
-- Feed and water core forms were too light and their row density did not match the selected medium-density form.
-- Cage detail displayed a pond-area value for a cage.
-- The old DevTools project loaded a stale bundle and the earlier cage image path.
+The same mapping is used by the home, unit list, unit creation, unit detail, and record forms.
 
-### Pass 2 - passed
+## Remaining P3 Polish
 
-- Rebuilt the eight selected states from a fresh temporary WeChat DevTools project.
-- Added cage dimensions and stocking quantity to the core form.
-- Converted the core record fields to medium-density single rows.
-- Corrected cage detail sizing and tightened its vertical rhythm so all nine summary rows remain available.
-- Kept detail and record-form primary actions visible above the five-column navigation.
-- Added the missing five-column navigation to the cage creation screen.
-- Replaced the stale/opaque cage image path with `src/assets/offshore-cage.png`.
-
-## Evidence
-
-- Individual screenshots: `qa-captures/pass2-01-home-field.png` through `qa-captures/pass2-08-records-settings.png`.
-- Eight-screen implementation sheet: `qa-captures/pass2-eight-screens.png`.
-- Same-input source comparison: `qa-captures/design-vs-implementation-pass2.png`.
-
-## Follow-Up Polish
-
-- P3: later iterations may refine illustrative sample counts and alert copy without changing the approved layout or interaction model.
+- Illustrative sample values and copy may continue to evolve with real-user feedback without changing the approved structure.
+- The generated scenes can later receive species-specific variants when user-uploaded unit photography is added to the product scope.
 
 final result: passed
