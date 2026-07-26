@@ -20,6 +20,7 @@ export default function UnitsPage() {
   useDidShow(() => setState(loadV4State()));
   const farmIndex = Math.max(0, state.farms.findIndex((farm) => farm.id === state.settings.selectedFarmId));
   const farm = state.farms[farmIndex];
+  const farmUnits = state.units.filter((unit) => unit.farmId === farm?.id);
   const units = useMemo(() => state.units.filter((unit) =>
     unit.farmId === farm?.id &&
     (filter === "all" || unit.type === filter) &&
@@ -42,7 +43,7 @@ export default function UnitsPage() {
     {state.farms.length > 1 && <Picker mode="selector" range={state.farms.map((item) => item.name)} value={farmIndex} onChange={(e) => chooseFarm(Number(e.detail.value))}><Text className="farm-switch">当前：{farm?.name}</Text></Picker>}
     <View className="search-box"><Search size="20" /><Input value={query} placeholder="搜索养殖单元、地点" onInput={(e) => setQuery(e.detail.value)} /><FilterOutlined size="20" /></View>
     <View className="filter-tabs">
-      {(["all", "cage", "pond", "tank"] as const).map((item) => <Text className={filter === item ? "active" : ""} key={item} onClick={() => setFilter(item)}>{item === "all" ? "全部" : labels[item]}({item === "all" ? state.units.length : state.units.filter((u) => u.type === item).length})</Text>)}
+      {(["all", "cage", "pond", "tank", "other"] as const).map((item) => <Text className={filter === item ? "active" : ""} key={item} onClick={() => setFilter(item)}>{item === "all" ? "全部" : labels[item]}({item === "all" ? farmUnits.length : farmUnits.filter((unit) => unit.type === item).length})</Text>)}
     </View>
     {!units.length ? <View className="empty-state"><Text>暂无符合条件的养殖单元</Text><Text onClick={() => Taro.navigateTo({ url: "/pages/pond-form/index" })}>创建养殖单元</Text></View> :
       groups.map((type) => {
@@ -59,7 +60,7 @@ export default function UnitsPage() {
             return <View className="unit-card" key={unit.id} onClick={() => Taro.navigateTo({ url: `/pages/pond-detail/index?id=${unit.id}` })}>
               <Image className="unit-thumb" src={image} mode="aspectFill" />
               <View className="unit-copy">
-                <View className="unit-title-row"><Text className="unit-name">{unit.name}</Text><Text className={`unit-status ${unit.status === "active" ? "normal" : "attention"}`}>{unit.status === "active" ? "正常" : "停用"}</Text></View>
+                <View className="unit-title-row"><Text className="unit-name">{unit.name}</Text><Text className={`unit-status ${unit.status === "active" ? "normal" : "attention"}`}>{unit.status === "active" ? "在养" : "停用"}</Text></View>
                 <Text className="unit-meta">{batch?.species || "未设置品种"} · {unit.location || "未填写位置"}</Text>
                 <Text className="unit-meta">{batch?.stockingDate ? `投放 ${batch.stockingDate}` : "暂无投放日期"}</Text>
               </View>

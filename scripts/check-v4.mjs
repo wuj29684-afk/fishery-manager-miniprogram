@@ -29,7 +29,8 @@ try {
     "src/v4/metrics.ts",
     "src/v4/permissions.ts",
     "src/v4/merge.ts",
-    "src/v4/backup.ts"
+    "src/v4/backup.ts",
+    "src/v4/date.ts"
   ], { cwd: root, stdio: "inherit" });
 
   const require = createRequire(import.meta.url);
@@ -58,6 +59,7 @@ try {
   const { canMember } = require(join(out, "v4", "permissions.js"));
   const { mergeV4States } = require(join(out, "v4", "merge.js"));
   const { createCompleteBackupPackage, createCompleteEncryptedBackup, createEncryptedBackup, parseEncryptedBackup } = require(join(out, "v4", "backup.js"));
+  const { addLocalDays, formatLocalDate } = require(join(out, "v4", "date.js"));
 
   const now = "2026-07-23T00:00:00.000Z";
   let state = createV4State(now, "owner-a");
@@ -102,6 +104,22 @@ try {
     }, "owner-a", now),
     /进行中批次/
   );
+  state = createUnit(state, {
+    farmId: farm.id,
+    type: "cage",
+    name: "西网箱",
+    location: "西区"
+  }, "owner-a", now);
+  const secondUnit = state.units[1];
+  assert.equal(state.settings.selectedUnitId, secondUnit.id);
+  state = startBatch(state, {
+    farmId: farm.id,
+    unitId: secondUnit.id,
+    species: "罗非鱼",
+    stockingDate: "2026-07-23",
+    stockingQuantity: 1000
+  }, "owner-a", now);
+  assert.equal(state.batches[1].unitId, secondUnit.id);
 
   assert.equal(convertWeightToKg(80, "jin"), 40);
   state = purchaseInventory(state, {
@@ -268,6 +286,8 @@ try {
   const removed = deleteUnitPermanent(state, unit.id, "owner-a", now);
   assert.equal(removed.units.some((item) => item.id === unit.id), false);
   assert.equal(removed.records.some((item) => item.unitId === unit.id), false);
+  assert.equal(formatLocalDate(new Date(2026, 0, 2, 1, 30)), "2026-01-02");
+  assert.equal(addLocalDays(new Date(2026, 0, 2, 1, 30), -2), "2025-12-31");
 
   console.log("0.4 domain checks passed");
 } finally {

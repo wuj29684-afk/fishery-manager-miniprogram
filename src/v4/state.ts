@@ -106,7 +106,7 @@ export function createUnit(
   return markPending({
     ...state,
     units: [...state.units, unit],
-    settings: { ...state.settings, selectedUnitId: state.settings.selectedUnitId || unit.id }
+    settings: { ...state.settings, selectedUnitId: unit.id }
   }, unit.id);
 }
 

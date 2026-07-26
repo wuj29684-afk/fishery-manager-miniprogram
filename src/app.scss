@@ -1,5 +1,13 @@
 @import "@taroify/icons/index.css";
 
+@font-face {
+  font-family: "vant-icon";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("./assets/taroify-icons.woff2") format("woff2");
+}
+
 page {
   min-height: 100%;
   --fm-green-900: #087b70;

@@ -1,10 +1,12 @@
 import { calculateBatchMetrics } from "./metrics";
+import { addLocalDays, formatLocalDate } from "./date";
 import type { V4State } from "./types";
 
 export type ReportKind = "daily" | "weekly" | "batch";
 
 export function createReportLines(state: V4State, kind: ReportKind, batchId = ""): string[] {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatLocalDate();
+  const weekStart = addLocalDays(new Date(), -6);
   const batch = state.batches.find((item) => item.id === batchId) ||
     state.batches.find((item) => item.unitId === state.settings.selectedUnitId && item.status !== "completed");
   const farm = state.farms.find((item) => item.id === (batch?.farmId || state.settings.selectedFarmId));
@@ -13,8 +15,7 @@ export function createReportLines(state: V4State, kind: ReportKind, batchId = ""
     if (batch && record.batchId !== batch.id) return false;
     if (kind === "daily") return record.date === today;
     if (kind === "weekly") {
-      const age = Date.now() - new Date(record.date).getTime();
-      return age >= 0 && age <= 7 * 86400000;
+      return record.date >= weekStart && record.date <= today;
     }
     return true;
   });

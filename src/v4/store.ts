@@ -1,5 +1,6 @@
 import Taro from "@tarojs/taro";
 import { createId } from "../domain/id";
+import { CLOUDBASE_ENV_ID, isCloudBaseSyncConfigured } from "../config/api";
 import { mergeV4States } from "./merge";
 import { createV4State, migrateV2ToV4 } from "./state";
 import type { V4State } from "./types";
@@ -7,10 +8,19 @@ import type { V4State } from "./types";
 declare const wx: {
   requestSubscribeMessage(options: { tmplIds: string[] }): Promise<Record<string, string>>;
   cloud?: {
+    init(options: { env: string; traceUser: boolean }): void;
     callFunction<T = unknown>(options: { name: string; data: Record<string, unknown> }): Promise<{ result?: T }>;
     uploadFile(options: { cloudPath: string; filePath: string }): Promise<{ fileID: string }>;
   };
 };
+
+let cloudInitialized = false;
+
+export function ensureCloudBase(): void {
+  if (cloudInitialized || !isCloudBaseSyncConfigured() || !wx.cloud) return;
+  wx.cloud.init({ env: CLOUDBASE_ENV_ID, traceUser: true });
+  cloudInitialized = true;
+}
 
 const STATE_KEY = "fishery-manager:state:v3";
 const LEGACY_KEY = "fishery-manager:farm-state:v1";
@@ -126,6 +136,7 @@ export function loadExperienceV4(): V4State {
 
 function requireCloud() {
   if (!wx.cloud) throw new Error("云开发尚未配置或当前基础库不支持");
+  ensureCloudBase();
   return wx.cloud;
 }
 

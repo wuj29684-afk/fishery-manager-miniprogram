@@ -7,7 +7,7 @@ import { createId } from "../../domain/id";
 import { createCompleteEncryptedBackup, parseEncryptedBackup } from "../../v4/backup";
 import { purchaseInventory } from "../../v4/inventory";
 import { createRecordsCsv } from "../../v4/report";
-import { bindCurrentWechatAccount, loadV4State, requestTaskSubscription, resetV4State, saveV4State, syncV4State } from "../../v4/store";
+import { bindCurrentWechatAccount, ensureCloudBase, loadV4State, requestTaskSubscription, resetV4State, saveV4State, syncV4State } from "../../v4/store";
 import { loadCityWeather } from "../../v4/weather";
 import { createTemplate, resolveV4Conflict } from "../../v4/state";
 import type { V4State } from "../../v4/types";
@@ -101,6 +101,7 @@ export default function DataBackupPage() {
   async function createInvite() {
     if (!farm || state.auth.status !== "bound") throw new Error("请先绑定微信账号并创建养殖场");
     if (!wx.cloud) throw new Error("云开发尚未配置");
+    ensureCloudBase();
     const response = await wx.cloud.callFunction<{ code?: string }>({ name: "syncAccountData", data: { action: "inviteCreate", farmId: farm.id } });
     if (!response.result?.code) throw new Error("邀请码生成失败");
     await Taro.setClipboardData({ data: response.result.code });
@@ -111,6 +112,7 @@ export default function DataBackupPage() {
     if (!inviteCode.trim()) throw new Error("请输入邀请码");
     if (state.auth.status !== "bound") throw new Error("请先绑定微信账号");
     if (!wx.cloud) throw new Error("云开发尚未配置");
+    ensureCloudBase();
     await wx.cloud.callFunction({ name: "syncAccountData", data: { action: "inviteAccept", code: inviteCode.trim().toUpperCase() } });
     setInviteCode("");
     await Taro.showModal({ title: "申请已提交", content: "需要养殖场负责人批准后才能读取和记录数据。", showCancel: false });
@@ -118,6 +120,7 @@ export default function DataBackupPage() {
 
   async function approveMember(userId: string) {
     if (!wx.cloud || !farm) throw new Error("云开发尚未配置");
+    ensureCloudBase();
     const unitIds = state.units.filter((unit) => unit.farmId === farm.id).map((unit) => unit.id);
     await wx.cloud.callFunction({
       name: "syncAccountData",
@@ -133,6 +136,7 @@ export default function DataBackupPage() {
 
   async function loadMemberData() {
     if (!wx.cloud || state.auth.status !== "bound") throw new Error("请先绑定微信账号");
+    ensureCloudBase();
     const response = await wx.cloud.callFunction<{ state?: V4State; revision?: number }>({ name: "syncAccountData", data: { action: "v4MemberPull" } });
     if (!response.result?.state) throw new Error("尚未获得负责人批准");
     const next = {
@@ -150,6 +154,7 @@ export default function DataBackupPage() {
     if (!confirm.confirm) return;
     if (state.auth.status === "bound") {
       if (!wx.cloud) throw new Error("云开发尚未配置，无法确认云端删除");
+      ensureCloudBase();
       await wx.cloud.callFunction({ name: "syncAccountData", data: { action: "v4DeleteAccount" } });
     }
     setState(resetV4State());

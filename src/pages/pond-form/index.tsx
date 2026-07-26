@@ -8,6 +8,7 @@ import indoorRasTanks from "../../assets/indoor-ras-tanks.jpg";
 import otherEcoAquaculture from "../../assets/other-eco-aquaculture.jpg";
 import outdoorPondPhoto from "../../assets/outdoor-pond-photo.jpg";
 import { createFarm, createUnit, startBatch } from "../../v4/state";
+import { formatLocalDate } from "../../v4/date";
 import { loadV4State, saveV4State } from "../../v4/store";
 import type { UnitType } from "../../v4/types";
 import "./index.scss";
@@ -26,7 +27,7 @@ export default function PondFormPage() {
   const [location, setLocation] = useState("");
   const [typeIndex, setTypeIndex] = useState(0);
   const [species, setSpecies] = useState("");
-  const [stockingDate, setStockingDate] = useState(new Date().toISOString().slice(0, 10));
+  const [stockingDate, setStockingDate] = useState(formatLocalDate());
   const [quantity, setQuantity] = useState("");
   const [area, setArea] = useState("");
   const [saving, setSaving] = useState(false);
@@ -75,8 +76,8 @@ export default function PondFormPage() {
 
   return <View className="form-page safe-tab-page">
     <View className="form-head"><ArrowLeft size="22" onClick={() => Taro.navigateBack()} /><Text className="title">创建养殖单元</Text><View className="head-spacer" /></View>
-    <View className="step-line"><Text className="active">1</Text><View /><Text className={step === 2 ? "active" : ""}>2</Text><View /><Text>3</Text></View>
-    <View className="step-labels"><Text>类型选择</Text><Text>基本信息</Text><Text>完成</Text></View>
+    <View className="step-line"><Text className="active">1</Text><View /><Text className={step === 2 ? "active" : ""}>2</Text></View>
+    <View className="step-labels"><Text>类型选择</Text><Text>基本信息</Text></View>
 
     {step === 1 ? <><Text className="form-section-title">选择养殖类型</Text>
     <View className="unit-type-list">

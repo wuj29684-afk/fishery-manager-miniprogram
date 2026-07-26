@@ -9,11 +9,12 @@ import otherEcoAquaculture from "../../assets/other-eco-aquaculture.jpg";
 import outdoorPondPhoto from "../../assets/outdoor-pond-photo.jpg";
 import seaCagePhoto from "../../assets/sea-cage-photo.jpg";
 import { calculateBatchMetrics } from "../../v4/metrics";
+import { formatLocalDate } from "../../v4/date";
 import { bindCurrentWechatAccount, loadExperienceV4, loadV4State, saveV4State } from "../../v4/store";
 import type { V4RecordType, V4State } from "../../v4/types";
 import "./index.scss";
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => formatLocalDate();
 const quick = [
   { type: "feed" as V4RecordType, label: "投喂", Icon: Bag, tone: "green" },
   { type: "water" as V4RecordType, label: "水质", Icon: Points, tone: "blue" },
@@ -148,7 +149,7 @@ export default function IndexPage() {
           <View className="unit-hero-shade" />
           <View className="unit-hero-copy">
             <View><Text className="unit-name">{selectedUnit?.name || "暂无养殖单元"}</Text><Text className="unit-meta">{batch ? `${batch.species} · 养殖 ${ageDays(batch.stockingDate)} 天` : "暂无进行中批次"}</Text></View>
-            <Text className="normal-badge">{abnormalCount ? `${abnormalCount} 项关注` : "正常"}</Text>
+            <Text className={`normal-badge ${abnormalCount ? "has-alert" : ""}`}>{abnormalCount ? `${abnormalCount} 项关注` : "暂无异常记录"}</Text>
           </View>
           {activeUnits.length > 1 && <Picker mode="selector" range={activeUnits.map((unit) => unit.name)} onChange={(event) => selectUnit(Number(event.detail.value))}>
             <Text className="switch-unit">切换</Text>
@@ -156,7 +157,7 @@ export default function IndexPage() {
         </View>
         <View className={`alert-line ${abnormalCount ? "is-alert" : ""}`}>
           <Warning size="20" />
-          <Text>{abnormalCount ? `今天有 ${abnormalCount} 项异常需要处理` : "预计明天有雨，注意增氧与水位管理"}</Text>
+          <Text>{abnormalCount ? `今天有 ${abnormalCount} 项异常需要处理` : "暂无异常记录，记得补充今日记录"}</Text>
         </View>
         <View className="quick-grid">
           {quick.map(({ type, label, Icon, tone }) => <View className={`quick-item quick-${tone}`} key={type} onClick={() => openRecord(type)}>
@@ -168,7 +169,7 @@ export default function IndexPage() {
           <View className="today-date"><Text>今日概览</Text><Text>{today()}</Text></View>
           <View className="today-stats">
             <View><Text>{todayRecords.filter((r) => r.type === "feed").reduce((sum, r) => sum + Number(r.data.weightKg || 0), 0)}</Text><Text>投喂 kg</Text></View>
-            <View><Text>{todayRecords.filter((r) => r.type === "water").length}/5</Text><Text>水质达标</Text></View>
+            <View><Text>{todayRecords.filter((r) => r.type === "water").length}</Text><Text>水质记录</Text></View>
             <View><Text>{abnormalCount}</Text><Text>异常事件</Text></View>
             <View><Text>{todayRecords.filter((r) => r.type === "drug").length}</Text><Text>用药次</Text></View>
           </View>
